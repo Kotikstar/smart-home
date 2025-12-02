@@ -18,6 +18,12 @@
 fetch('/api.php?resource=diesel_prices')
   .then(r => r.json())
   .then(data => {
+    if (!Array.isArray(data) || data.length === 0) {
+      document.getElementById('latestDate').innerText = '--';
+      document.getElementById('latestValue').innerText = 'нет данных';
+      return;
+    }
+
     const labels = data.map(row => row.date);
     const prices = data.map(row => row.price);
 
