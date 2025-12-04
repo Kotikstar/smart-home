@@ -12,7 +12,8 @@ $TARGET_URLS = [
   'logs'       => 'logs.php',
   'diesel'     => 'diesel_price.php',
   'passes'     => 'passes.php',
-  'search'     => 'search.php'
+  'search'     => 'search.php',
+  'carbook'    => 'car_book.php'
 ];
 
 $ALIASES = [
@@ -37,7 +38,10 @@ $ALIASES = [
   'search'      => 'search',
   'plate'       => 'search',
   'plates'      => 'search',
-  'lpr'         => 'search'
+  'lpr'         => 'search',
+  'carbook'     => 'carbook',
+  'car_book'    => 'carbook',
+  'car'         => 'carbook'
 ];
 
 function norm_key(?string $key, array $ALIASES): ?string {
