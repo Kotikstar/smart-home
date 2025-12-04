@@ -289,6 +289,7 @@ if ($intent && isset($TARGET_URLS[$intent])) {
       diesel: 'Цены',
       passes: 'Пропуска',
       service: 'Сервис',
+      carbook: 'Car Book',
     };
 
     const openModal = () => {
@@ -446,6 +447,7 @@ if ($intent && isset($TARGET_URLS[$intent])) {
         const input = card?.querySelector(`input[data-permission="${key}"]`);
         payloadPerms[key] = input?.checked || false;
       });
+      console.debug('[admin] Saving permissions', { userId, payloadPerms });
       btn.setAttribute('disabled', 'disabled');
       if (adminStatus) adminStatus.textContent = 'Сохраняем права...';
       try {
@@ -456,6 +458,7 @@ if ($intent && isset($TARGET_URLS[$intent])) {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Не удалось сохранить права');
+        console.debug('[admin] Saved permissions response', data);
         if (adminStatus) adminStatus.textContent = 'Права обновлены.';
         if (userId === <?php echo currentUserId() ?: 0; ?>) {
           await fetchSession();
