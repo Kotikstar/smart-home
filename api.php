@@ -316,15 +316,15 @@ switch ($resource) {
                         'dashboard' => (bool) $u['can_dashboard'],
                         'fuel' => (bool) $u['can_fuel'],
                         'cards' => (bool) $u['can_cards'],
-                    'dispense' => (bool) $u['can_dispense'],
-                    'logs' => (bool) $u['can_logs'],
-                    'diesel' => (bool) $u['can_diesel'],
-                    'passes' => (bool) $u['can_passes'],
-                    'service' => (bool) $u['can_service'],
-                    'carbook' => (bool) $u['can_carbook'],
-                ],
-            ];
-        }, $stmt->fetchAll());
+                        'dispense' => (bool) $u['can_dispense'],
+                        'logs' => (bool) $u['can_logs'],
+                        'diesel' => (bool) $u['can_diesel'],
+                        'passes' => (bool) $u['can_passes'],
+                        'service' => (bool) $u['can_service'],
+                        'carbook' => (bool) $u['can_carbook'],
+                    ],
+                ];
+            }, $stmt->fetchAll());
 
             jsonResponse($users);
         } elseif ($action === 'update_permissions') {
@@ -348,15 +348,29 @@ switch ($resource) {
             $updates = 'is_admin = VALUES(is_admin), ' . implode(', ', array_map(fn($k) => 'can_' . $k . ' = VALUES(can_' . $k . ')', PERMISSION_KEYS));
 
             $sql = 'INSERT INTO user_permissions (user_id, is_admin, ' . implode(', ', array_map(fn($k) => 'can_' . $k, PERMISSION_KEYS)) . ") VALUES ($placeholders) ON DUPLICATE KEY UPDATE $updates";
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute($values);
+            try {
+                error_log('[users:update_permissions] user_id=' . $userId . ' payload=' . json_encode($payloadPermissions, JSON_UNESCAPED_UNICODE));
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute($values);
+                $storedRow = ensurePermissionsRow($pdo, $userId);
+                $storedPerms = permissionsRowToArray($storedRow);
 
-            // обновить сессию, если меняем права текущему пользователю
-            if ($userId === currentUserId()) {
-                loadUserPermissions($pdo, $userId);
+                // обновить сессию, если меняем права текущему пользователю
+                if ($userId === currentUserId()) {
+                    loadUserPermissions($pdo, $userId);
+                }
+
+                jsonResponse([
+                    'success' => true,
+                    'saved' => [
+                        'is_admin' => (bool) $storedRow['is_admin'],
+                        'permissions' => $storedPerms,
+                    ],
+                ]);
+            } catch (\Throwable $e) {
+                error_log('[users:update_permissions:error] ' . $e->getMessage());
+                jsonResponse(['error' => 'Ошибка сохранения прав', 'details' => $e->getMessage()], 500);
             }
-
-            jsonResponse(['success' => true]);
         } else {
             jsonResponse(['error' => 'Неизвестное действие'], 400);
         }
