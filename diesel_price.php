@@ -1,4 +1,7 @@
-<?php include 'header.php'; ?>
+<?php
+define('REQUIRED_PERMISSION', 'diesel');
+include 'header.php';
+?>
 <div class="max-w-4xl mx-auto px-4 py-6 text-white">
   <h2 class="text-2xl font-bold mb-6">📈 График цены на дизель</h2>
 

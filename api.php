@@ -2,6 +2,10 @@
 require 'db.php'; // $pdo для базы пропусков
 require 'config.php'; // $conn для базы топливной системы (mysqli)
 require 'functions.php';
+require 'auth.php';
+
+ensureSession();
+$body = json_decode(file_get_contents('php://input'), true) ?? [];
 
 function jsonResponse($data, int $status = 200): void {
     http_response_code($status);
@@ -40,6 +44,18 @@ function getTotalDispensed(mysqli $conn): float {
 
 // Проверка пропуска по номеру (обратная совместимость)
 if (isset($_GET['plate']) && !isset($_GET['resource'])) {
+    if (!currentUserId()) {
+        http_response_code(401);
+        header('Content-Type: text/plain');
+        echo 'auth';
+        exit;
+    }
+    if (!userHasPermission('passes')) {
+        http_response_code(403);
+        header('Content-Type: text/plain');
+        echo 'forbidden';
+        exit;
+    }
     header('Content-Type: text/plain');
     $plate = preg_replace('/\s+/', '', $_GET['plate']);
     $stmt = $pdo->prepare("SELECT COUNT(*) FROM passes WHERE license_plate = ? AND (pass_type = 'permanent' OR (pass_type = 'temporary' AND end_time > NOW()))");
@@ -56,8 +72,13 @@ if (!$resource) {
     jsonResponse(['error' => 'Укажите параметр resource']);
 }
 
+if (!currentUserId()) {
+    jsonResponse(['error' => 'Требуется вход по passkey'], 401);
+}
+
 switch ($resource) {
     case 'fuel':
+        requirePermissionJson('fuel');
         ensureFuelRow($conn);
         if ($action === 'update') {
             $delta = (float)($_GET['delta'] ?? 0);
@@ -79,6 +100,7 @@ switch ($resource) {
         break;
 
     case 'cards':
+        requirePermissionJson('cards');
         if ($action === 'add') {
             $name = $_GET['name'] ?? '';
             $identifier = $_GET['identifier'] ?? '';
@@ -116,6 +138,7 @@ switch ($resource) {
         break;
 
     case 'dispense':
+        requirePermissionJson('dispense');
         if ($action !== 'issue') {
             jsonResponse(['error' => 'Неизвестное действие'], 400);
         }
@@ -152,6 +175,7 @@ switch ($resource) {
         break;
 
     case 'logs':
+        requirePermissionJson('logs');
         $identifier = $_GET['identifier'] ?? null;
         $from = $_GET['from'] ?? null;
         $to = $_GET['to'] ?? null;
@@ -185,6 +209,7 @@ switch ($resource) {
         break;
 
     case 'stats':
+        requirePermissionJson('dashboard');
         $dispensed = $conn->query("SELECT COALESCE(SUM(amount),0) AS total FROM logs WHERE type='dispense'")->fetch_assoc()['total'];
         $refilled = $conn->query("SELECT COALESCE(SUM(amount),0) AS total FROM logs WHERE type='refill'")->fetch_assoc()['total'];
         $topRes = $conn->query("SELECT cards.name, cards.identifier, SUM(logs.amount) AS total FROM logs JOIN cards ON logs.card_id = cards.id WHERE logs.type='dispense' GROUP BY logs.card_id ORDER BY total DESC LIMIT 1");
@@ -197,6 +222,7 @@ switch ($resource) {
         break;
 
     case 'chart_data':
+        requirePermissionJson('dashboard');
         $startDate = date('Y-m-d', strtotime('-6 days'));
         $stmt = $conn->prepare("SELECT DATE(created_at) AS d, type, SUM(amount) AS total FROM logs WHERE DATE(created_at) >= ? GROUP BY d, type");
         $stmt->bind_param('s', $startDate);
@@ -224,6 +250,7 @@ switch ($resource) {
         break;
 
     case 'service':
+        requirePermissionJson('service');
         ensureServiceRows($conn);
         $types = ['coarse', 'fine'];
         $totalDispensed = getTotalDispensed($conn);
@@ -267,9 +294,71 @@ switch ($resource) {
         break;
 
     case 'diesel_prices':
+        requirePermissionJson('diesel');
         $res = $conn->query('SELECT date, price FROM diesel_prices ORDER BY date ASC');
         $prices = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
         jsonResponse($prices);
+        break;
+
+    case 'users':
+        if (!isAdmin()) {
+            jsonResponse(['error' => 'Требуются права администратора'], 403);
+        }
+
+        if ($action === 'list') {
+            $stmt = $pdo->query('SELECT u.id, u.username, COALESCE(up.is_admin, 0) AS is_admin, COALESCE(up.can_dashboard, 0) AS can_dashboard, COALESCE(up.can_fuel, 0) AS can_fuel, COALESCE(up.can_cards, 0) AS can_cards, COALESCE(up.can_dispense, 0) AS can_dispense, COALESCE(up.can_logs, 0) AS can_logs, COALESCE(up.can_diesel, 0) AS can_diesel, COALESCE(up.can_passes, 0) AS can_passes, COALESCE(up.can_service, 0) AS can_service FROM users u LEFT JOIN user_permissions up ON up.user_id = u.id ORDER BY u.id ASC');
+            $users = array_map(function ($u) {
+                return [
+                    'id' => (int) $u['id'],
+                    'username' => $u['username'],
+                    'is_admin' => (bool) $u['is_admin'],
+                    'permissions' => [
+                        'dashboard' => (bool) $u['can_dashboard'],
+                        'fuel' => (bool) $u['can_fuel'],
+                        'cards' => (bool) $u['can_cards'],
+                        'dispense' => (bool) $u['can_dispense'],
+                        'logs' => (bool) $u['can_logs'],
+                        'diesel' => (bool) $u['can_diesel'],
+                        'passes' => (bool) $u['can_passes'],
+                        'service' => (bool) $u['can_service'],
+                    ],
+                ];
+            }, $stmt->fetchAll());
+
+            jsonResponse($users);
+        } elseif ($action === 'update_permissions') {
+            $userId = (int) ($body['user_id'] ?? 0);
+            if ($userId <= 0) {
+                jsonResponse(['error' => 'Укажите пользователя'], 400);
+            }
+
+            $payloadPermissions = $body['permissions'] ?? [];
+            $isAdminFlag = !empty($payloadPermissions['is_admin']) ? 1 : 0;
+            if ($userId === currentUserId() && $isAdminFlag === 0) {
+                jsonResponse(['error' => 'Нельзя снять права администратора с собственного аккаунта'], 400);
+            }
+
+            $values = [$userId, $isAdminFlag];
+            foreach (PERMISSION_KEYS as $key) {
+                $values[] = !empty($payloadPermissions[$key]) ? 1 : 0;
+            }
+
+            $placeholders = implode(', ', array_fill(0, count(PERMISSION_KEYS) + 2, '?'));
+            $updates = 'is_admin = VALUES(is_admin), ' . implode(', ', array_map(fn($k) => 'can_' . $k . ' = VALUES(can_' . $k . ')', PERMISSION_KEYS));
+
+            $sql = 'INSERT INTO user_permissions (user_id, is_admin, ' . implode(', ', array_map(fn($k) => 'can_' . $k, PERMISSION_KEYS)) . ") VALUES ($placeholders) ON DUPLICATE KEY UPDATE $updates";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($values);
+
+            // обновить сессию, если меняем права текущему пользователю
+            if ($userId === currentUserId()) {
+                loadUserPermissions($pdo, $userId);
+            }
+
+            jsonResponse(['success' => true]);
+        } else {
+            jsonResponse(['error' => 'Неизвестное действие'], 400);
+        }
         break;
 
     default:

@@ -1,4 +1,7 @@
-<?php include 'header.php'; ?>
+<?php
+define('REQUIRED_PERMISSION', 'cards');
+include 'header.php';
+?>
 <div class="max-w-6xl mx-auto px-4 py-6">
   <h2 class="text-2xl font-bold text-white mb-6">Топливные карты</h2>
 
