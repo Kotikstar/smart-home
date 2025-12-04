@@ -1,4 +1,7 @@
-<?php include 'header.php'; ?>
+<?php
+define('REQUIRED_PERMISSION', 'dispense');
+include 'header.php';
+?>
 <div class="max-w-2xl mx-auto px-4 py-6 text-white">
   <h2 class="text-2xl font-bold mb-4">Выдача топлива</h2>
   <form id="dispenseForm" class="bg-gray-800 p-6 rounded-lg shadow space-y-4">

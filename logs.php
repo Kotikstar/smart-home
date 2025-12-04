@@ -1,4 +1,7 @@
-<?php include 'header.php'; ?>
+<?php
+define('REQUIRED_PERMISSION', 'logs');
+include 'header.php';
+?>
 <div class="max-w-6xl mx-auto px-4 py-6 text-white">
   <h2 class="text-2xl font-bold mb-4">Журнал выдачи топлива</h2>
 

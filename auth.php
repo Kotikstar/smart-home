@@ -2,6 +2,17 @@
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/webauthn_lib.php';
 
+const PERMISSION_KEYS = [
+    'dashboard',
+    'fuel',
+    'cards',
+    'dispense',
+    'logs',
+    'diesel',
+    'passes',
+    'service',
+];
+
 use lbuchs\WebAuthn\WebAuthn;
 use lbuchs\WebAuthn\WebAuthnException;
 
@@ -60,6 +71,98 @@ function requireAuthJson(): void
     }
 }
 
+function ensurePermissionsRow(PDO $pdo, int $userId): array
+{
+    $stmt = $pdo->prepare('SELECT * FROM user_permissions WHERE user_id = ? LIMIT 1');
+    $stmt->execute([$userId]);
+    $row = $stmt->fetch();
+    if ($row) {
+        return $row;
+    }
+
+    $insert = $pdo->prepare('INSERT INTO user_permissions (user_id) VALUES (?)');
+    $insert->execute([$userId]);
+    $stmt->execute([$userId]);
+    return $stmt->fetch();
+}
+
+function permissionsRowToArray(array $row): array
+{
+    $perms = [];
+    foreach (PERMISSION_KEYS as $key) {
+        $column = 'can_' . $key;
+        $perms[$key] = isset($row[$column]) ? (bool) $row[$column] : false;
+    }
+    return $perms;
+}
+
+function loadUserPermissions(PDO $pdo, int $userId): array
+{
+    $row = ensurePermissionsRow($pdo, $userId);
+    $permissions = permissionsRowToArray($row);
+    $_SESSION['permissions'] = $permissions;
+    $_SESSION['is_admin'] = isset($row['is_admin']) ? (bool) $row['is_admin'] : false;
+    return $permissions;
+}
+
+function currentPermissions(): array
+{
+    ensureSession();
+    if (!currentUserId()) {
+        return [];
+    }
+    if (isset($_SESSION['permissions']) && is_array($_SESSION['permissions'])) {
+        return $_SESSION['permissions'];
+    }
+    global $pdo;
+    return loadUserPermissions($pdo, currentUserId());
+}
+
+function isAdmin(): bool
+{
+    ensureSession();
+    if (!currentUserId()) {
+        return false;
+    }
+    if (isset($_SESSION['is_admin'])) {
+        return (bool) $_SESSION['is_admin'];
+    }
+    global $pdo;
+    loadUserPermissions($pdo, currentUserId());
+    return (bool) ($_SESSION['is_admin'] ?? false);
+}
+
+function userHasPermission(string $permission): bool
+{
+    if (isAdmin()) {
+        return true;
+    }
+    $permissions = currentPermissions();
+    return $permissions[$permission] ?? false;
+}
+
+function requirePermissionPage(string $permission): void
+{
+    if (userHasPermission($permission)) {
+        return;
+    }
+
+    header('Location: all.php?login=1&denied=1');
+    exit;
+}
+
+function requirePermissionJson(string $permission): void
+{
+    if (userHasPermission($permission)) {
+        return;
+    }
+
+    http_response_code(403);
+    header('Content-Type: application/json');
+    echo json_encode(['error' => 'Недостаточно прав для операции'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 function base64url_encode(string $data): string
 {
     return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
@@ -87,6 +190,7 @@ function createUser(PDO $pdo, string $username): array
     $stmt = $pdo->prepare('INSERT INTO users (username) VALUES (?)');
     $stmt->execute([$username]);
     $id = (int) $pdo->lastInsertId();
+    ensurePermissionsRow($pdo, $id);
     return ['id' => $id, 'username' => $username];
 }
 
@@ -121,6 +225,8 @@ function setAuthenticatedUser(array $user): void
 {
     $_SESSION['user_id'] = (int) $user['id'];
     $_SESSION['username'] = $user['username'];
+    global $pdo;
+    loadUserPermissions($pdo, (int) $user['id']);
 }
 
 function clearAuth(): void

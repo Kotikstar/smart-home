@@ -7,7 +7,10 @@ if ($passes) {
     $passes->execute([$query]);
 }
 ?>
-<?php include 'header.php'; ?>
+<?php
+define('REQUIRED_PERMISSION', 'passes');
+include 'header.php';
+?>
 <main class="max-w-4xl mx-auto px-4 py-8 space-y-6">
   <section class="bg-gray-800 rounded-xl shadow p-6">
     <h2 class="text-2xl font-bold mb-4">Поиск пропуска</h2>

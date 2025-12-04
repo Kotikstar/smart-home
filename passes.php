@@ -22,7 +22,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $passes = $pdo->query('SELECT * FROM passes ORDER BY id DESC')->fetchAll();
 ?>
-<?php include 'header.php'; ?>
+<?php
+define('REQUIRED_PERMISSION', 'passes');
+include 'header.php';
+?>
 <main class="max-w-6xl mx-auto px-4 py-8 space-y-8">
   <section class="bg-gray-800 rounded-xl shadow p-6">
     <h2 class="text-2xl font-bold mb-4">Управление пропусками</h2>

@@ -3,6 +3,10 @@ require_once __DIR__ . '/auth.php';
 ensureSession();
 $allowAnonymous = defined('ALLOW_ANON') && ALLOW_ANON === true;
 requireAuthPage($allowAnonymous);
+$requiredPermission = defined('REQUIRED_PERMISSION') ? REQUIRED_PERMISSION : null;
+if ($requiredPermission) {
+  requirePermissionPage($requiredPermission);
+}
 ?>
 <!DOCTYPE html>
 <html lang="ru">

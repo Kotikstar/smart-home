@@ -23,6 +23,8 @@ try {
             respond([
                 'authenticated' => (bool) currentUserId(),
                 'username' => currentUsername(),
+                'permissions' => currentPermissions(),
+                'is_admin' => isAdmin(),
             ]);
 
         case 'logout':
