@@ -12,6 +12,16 @@ function ensureSession(): void
     }
 }
 
+function requireAuthPage(bool $allowAnonymous = false): void
+{
+    if ($allowAnonymous || currentUserId()) {
+        return;
+    }
+
+    header('Location: all.php?login=1');
+    exit;
+}
+
 function rpId(): string
 {
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost';

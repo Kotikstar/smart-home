@@ -1,6 +1,8 @@
 <?php
 require_once __DIR__ . '/auth.php';
 ensureSession();
+$allowAnonymous = defined('ALLOW_ANON') && ALLOW_ANON === true;
+requireAuthPage($allowAnonymous);
 ?>
 <!DOCTYPE html>
 <html lang="ru">
@@ -168,14 +170,14 @@ ensureSession();
   <nav class="glass-nav p-4 sticky top-0 z-30">
     <div class="max-w-7xl mx-auto flex flex-wrap items-center gap-3 text-sm">
       <a href="all.php" class="nav-link font-semibold">Главная</a>
-      <a href="dashboard.php" class="nav-link">Панель</a>
-      <a href="fuel.php" class="nav-link">Топливо</a>
-      <a href="cards.php" class="nav-link">Карты</a>
-      <a href="dispense.php" class="nav-link">Выдача</a>
-      <a href="logs.php" class="nav-link">Логи</a>
-      <a href="diesel_price.php" class="nav-link">Цены на дизель</a>
-      <a href="passes.php" class="nav-link">Пропуска</a>
-      <a href="search.php" class="nav-link">Поиск пропуска</a>
+      <a href="dashboard.php" class="nav-link requires-auth" data-requires-auth="true">Панель</a>
+      <a href="fuel.php" class="nav-link requires-auth" data-requires-auth="true">Топливо</a>
+      <a href="cards.php" class="nav-link requires-auth" data-requires-auth="true">Карты</a>
+      <a href="dispense.php" class="nav-link requires-auth" data-requires-auth="true">Выдача</a>
+      <a href="logs.php" class="nav-link requires-auth" data-requires-auth="true">Логи</a>
+      <a href="diesel_price.php" class="nav-link requires-auth" data-requires-auth="true">Цены на дизель</a>
+      <a href="passes.php" class="nav-link requires-auth" data-requires-auth="true">Пропуска</a>
+      <a href="search.php" class="nav-link requires-auth" data-requires-auth="true">Поиск пропуска</a>
       <div class="ml-auto flex items-center gap-2" id="auth-cta">
         <div id="user-pill" class="hidden items-center gap-2 rounded-full border border-emerald-300/40 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-100 shadow-lg shadow-emerald-500/10 backdrop-blur">
           <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>

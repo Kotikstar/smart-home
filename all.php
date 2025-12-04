@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/auth.php';
+define('ALLOW_ANON', true);
 ensureSession();
 $TARGET_URLS = [
   'home'       => 'all.php',
@@ -87,10 +88,10 @@ if ($intent && isset($TARGET_URLS[$intent])) {
         <h1 class="text-3xl md:text-4xl font-bold leading-tight">Хай-тек панель для топлива, пропусков и умного дома</h1>
         <p class="text-gray-200/90 text-lg">Используйте быстрые алиасы (?to=trk, #passes, /logs) или переходите по разделам ниже. Анимации, стекло и ореолы создают ощущение единой кибер-панели.</p>
         <div class="flex flex-wrap gap-3">
-          <a href="dashboard.php" class="glow-cta inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-sky-500 via-cyan-400 to-emerald-500 px-5 py-3 font-semibold shadow-lg shadow-cyan-500/30">
+          <a href="dashboard.php" data-requires-auth="true" class="glow-cta inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-sky-500 via-cyan-400 to-emerald-500 px-5 py-3 font-semibold shadow-lg shadow-cyan-500/30">
             <span>Панель TRK</span>
           </a>
-          <a href="passes.php" class="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-5 py-3 font-semibold backdrop-blur hover:border-emerald-300/40 transition">
+          <a href="passes.php" data-requires-auth="true" class="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-5 py-3 font-semibold backdrop-blur hover:border-emerald-300/40 transition">
             Пропуска
           </a>
           <button id="open-login-hero" class="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-black/30 px-5 py-3 font-semibold backdrop-blur hover:border-cyan-300/60 transition shadow-lg shadow-cyan-500/20">Войти</button>
@@ -126,12 +127,12 @@ if ($intent && isset($TARGET_URLS[$intent])) {
         </div>
       </div>
       <div class="flex flex-wrap gap-3 relative">
-        <a href="dashboard.php" class="rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 px-4 py-2 text-sm font-semibold shadow-md shadow-sky-500/25 transition hover:brightness-110">Панель</a>
-        <a href="fuel.php" class="rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold hover:border-cyan-300/40 transition">Топливо</a>
-        <a href="cards.php" class="rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold hover:border-cyan-300/40 transition">Карты</a>
-        <a href="dispense.php" class="rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold hover:border-cyan-300/40 transition">Выдача</a>
-        <a href="logs.php" class="rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold hover:border-cyan-300/40 transition">Логи</a>
-        <a href="diesel_price.php" class="rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold hover:border-cyan-300/40 transition">Цены</a>
+        <a href="dashboard.php" data-requires-auth="true" class="rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 px-4 py-2 text-sm font-semibold shadow-md shadow-sky-500/25 transition hover:brightness-110">Панель</a>
+        <a href="fuel.php" data-requires-auth="true" class="rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold hover:border-cyan-300/40 transition">Топливо</a>
+        <a href="cards.php" data-requires-auth="true" class="rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold hover:border-cyan-300/40 transition">Карты</a>
+        <a href="dispense.php" data-requires-auth="true" class="rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold hover:border-cyan-300/40 transition">Выдача</a>
+        <a href="logs.php" data-requires-auth="true" class="rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold hover:border-cyan-300/40 transition">Логи</a>
+        <a href="diesel_price.php" data-requires-auth="true" class="rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold hover:border-cyan-300/40 transition">Цены</a>
       </div>
     </article>
 
@@ -145,9 +146,9 @@ if ($intent && isset($TARGET_URLS[$intent])) {
         </div>
       </div>
       <div class="flex flex-wrap gap-3 relative">
-        <a href="passes.php" class="rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-2 text-sm font-semibold shadow-md shadow-emerald-500/25 transition hover:brightness-110">Создать пропуск</a>
-        <a href="search.php" class="rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold hover:border-emerald-300/40 transition">Поиск пропуска</a>
-        <a href="api.php?plate=test" class="rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold hover:border-emerald-300/40 transition">API проверка</a>
+        <a href="passes.php" data-requires-auth="true" class="rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-2 text-sm font-semibold shadow-md shadow-emerald-500/25 transition hover:brightness-110">Создать пропуск</a>
+        <a href="search.php" data-requires-auth="true" class="rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold hover:border-emerald-300/40 transition">Поиск пропуска</a>
+        <a href="api.php?plate=test" data-requires-auth="true" class="rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold hover:border-emerald-300/40 transition">API проверка</a>
       </div>
     </article>
   </section>
@@ -156,14 +157,14 @@ if ($intent && isset($TARGET_URLS[$intent])) {
     <div class="rounded-2xl border border-white/10 bg-white/5 p-5 space-y-3 shadow-lg shadow-cyan-500/10 backdrop-blur-xl">
       <p class="text-xs uppercase tracking-[0.25em] text-gray-400">Быстрые ссылки</p>
       <div class="flex flex-wrap gap-2 text-sm">
-        <a class="px-3 py-2 rounded-lg border border-white/10 bg-white/5 hover:border-cyan-300/40 transition" href="dashboard.php">/dashboard</a>
-        <a class="px-3 py-2 rounded-lg border border-white/10 bg-white/5 hover:border-cyan-300/40 transition" href="fuel.php">/fuel</a>
-        <a class="px-3 py-2 rounded-lg border border-white/10 bg-white/5 hover:border-cyan-300/40 transition" href="cards.php">/cards</a>
-        <a class="px-3 py-2 rounded-lg border border-white/10 bg-white/5 hover:border-cyan-300/40 transition" href="dispense.php">/dispense</a>
-        <a class="px-3 py-2 rounded-lg border border-white/10 bg-white/5 hover:border-cyan-300/40 transition" href="logs.php">/logs</a>
-        <a class="px-3 py-2 rounded-lg border border-white/10 bg-white/5 hover:border-cyan-300/40 transition" href="diesel_price.php">/diesel</a>
-        <a class="px-3 py-2 rounded-lg border border-white/10 bg-white/5 hover:border-cyan-300/40 transition" href="passes.php">/passes</a>
-        <a class="px-3 py-2 rounded-lg border border-white/10 bg-white/5 hover:border-cyan-300/40 transition" href="search.php">/search</a>
+        <a class="px-3 py-2 rounded-lg border border-white/10 bg-white/5 hover:border-cyan-300/40 transition" data-requires-auth="true" href="dashboard.php">/dashboard</a>
+        <a class="px-3 py-2 rounded-lg border border-white/10 bg-white/5 hover:border-cyan-300/40 transition" data-requires-auth="true" href="fuel.php">/fuel</a>
+        <a class="px-3 py-2 rounded-lg border border-white/10 bg-white/5 hover:border-cyan-300/40 transition" data-requires-auth="true" href="cards.php">/cards</a>
+        <a class="px-3 py-2 rounded-lg border border-white/10 bg-white/5 hover:border-cyan-300/40 transition" data-requires-auth="true" href="dispense.php">/dispense</a>
+        <a class="px-3 py-2 rounded-lg border border-white/10 bg-white/5 hover:border-cyan-300/40 transition" data-requires-auth="true" href="logs.php">/logs</a>
+        <a class="px-3 py-2 rounded-lg border border-white/10 bg-white/5 hover:border-cyan-300/40 transition" data-requires-auth="true" href="diesel_price.php">/diesel</a>
+        <a class="px-3 py-2 rounded-lg border border-white/10 bg-white/5 hover:border-cyan-300/40 transition" data-requires-auth="true" href="passes.php">/passes</a>
+        <a class="px-3 py-2 rounded-lg border border-white/10 bg-white/5 hover:border-cyan-300/40 transition" data-requires-auth="true" href="search.php">/search</a>
       </div>
     </div>
     <div class="rounded-2xl border border-white/10 bg-white/5 p-5 space-y-3 shadow-lg shadow-blue-500/10 backdrop-blur-xl">
@@ -240,6 +241,7 @@ if ($intent && isset($TARGET_URLS[$intent])) {
     return ALIASES[k] ?? k;
   }
   document.addEventListener('DOMContentLoaded', () => {
+    let isAuthenticated = <?php echo currentUserId() ? 'true' : 'false'; ?>;
     if (location.hash) {
       const key = normKey(location.hash);
       const target = key && TARGETS[key];
@@ -253,6 +255,7 @@ if ($intent && isset($TARGET_URLS[$intent])) {
     ].filter(Boolean);
     const closeBtn = document.getElementById('close-login');
     const modalCard = modal?.querySelector('.modal-enter');
+    const params = new URLSearchParams(window.location.search);
 
     const openModal = () => {
       if (!modal) return;
@@ -278,6 +281,10 @@ if ($intent && isset($TARGET_URLS[$intent])) {
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') closeModal();
     });
+    if (params.get('login') === '1') {
+      openModal();
+      history.replaceState(null, '', window.location.pathname);
+    }
 
     const usernameInput = document.getElementById('login-username');
     const statusEl = document.getElementById('login-status');
@@ -287,6 +294,7 @@ if ($intent && isset($TARGET_URLS[$intent])) {
     const userPill = document.getElementById('user-pill');
     const userPillName = document.getElementById('user-pill-name');
     const loginTrigger = document.getElementById('open-login');
+    const protectedLinks = document.querySelectorAll('[data-requires-auth="true"]');
 
     const b64ToArrayBuffer = (b64) => {
       const pad = '='.repeat((4 - (b64.length % 4)) % 4);
@@ -312,8 +320,21 @@ if ($intent && isset($TARGET_URLS[$intent])) {
       if (toneMap[tone]) statusEl.classList.add(toneMap[tone]);
     };
 
+    const guardNavigation = (e) => {
+      if (isAuthenticated) return;
+      e.preventDefault();
+      setStatus('Сначала войдите по passkey, чтобы открыть раздел', 'warn');
+      openModal();
+    };
+    protectedLinks.forEach((link) => link.addEventListener('click', guardNavigation));
+
     const updateAuthUI = (payload) => {
-      const authed = payload?.authenticated;
+      const authed = !!payload?.authenticated;
+      isAuthenticated = authed;
+      protectedLinks.forEach((link) => {
+        link.classList.toggle('brightness-75', !authed);
+        link.classList.toggle('cursor-pointer', true);
+      });
       if (authed) {
         userPill?.classList.remove('hidden');
         logoutBtn?.classList.remove('hidden');
@@ -325,6 +346,8 @@ if ($intent && isset($TARGET_URLS[$intent])) {
         loginTrigger?.classList.remove('hidden');
       }
     };
+
+    updateAuthUI({ authenticated: isAuthenticated, username: userPillName?.textContent || undefined });
 
     const fetchSession = async () => {
       try {
@@ -365,9 +388,22 @@ if ($intent && isset($TARGET_URLS[$intent])) {
     };
 
     const ensureSupport = () => {
-      if (!window.PublicKeyCredential) {
-        setStatus('Passkeys не поддерживаются этим браузером', 'error');
+      if (!window.isSecureContext) {
+        setStatus('Passkeys требуют HTTPS или localhost. Откройте портал по https:// или защищённому туннелю.', 'warn');
         return false;
+      }
+      if (!('PublicKeyCredential' in window)) {
+        setStatus('Браузер не поддерживает WebAuthn (нужен Chrome 108+, Edge, Safari 16+).', 'error');
+        return false;
+      }
+      if (!navigator.credentials || typeof navigator.credentials.get !== 'function') {
+        setStatus('API navigator.credentials недоступно в этом окружении', 'error');
+        return false;
+      }
+      if (window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) {
+        PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
+          .then((available) => { if (!available) setStatus('На устройстве нет встроенного аутентификатора passkey', 'warn'); })
+          .catch((e) => console.warn('uvpaa check failed', e));
       }
       return true;
     };
