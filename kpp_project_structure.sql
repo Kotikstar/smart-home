@@ -16,6 +16,27 @@ CREATE TABLE passes (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+DROP TABLE IF EXISTS users;
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(150) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+DROP TABLE IF EXISTS webauthn_credentials;
+CREATE TABLE webauthn_credentials (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    credential_id VARBINARY(255) NOT NULL UNIQUE,
+    public_key TEXT NOT NULL,
+    sign_count INT UNSIGNED DEFAULT 0,
+    algorithm INT DEFAULT NULL,
+    transports VARCHAR(255) DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 -- Пример данных
 INSERT INTO passes (owner_name, license_plate, pass_type)
 VALUES 
