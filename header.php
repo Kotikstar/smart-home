@@ -1,3 +1,7 @@
+<?php
+require_once __DIR__ . '/auth.php';
+ensureSession();
+?>
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -172,6 +176,13 @@
       <a href="diesel_price.php" class="nav-link">Цены на дизель</a>
       <a href="passes.php" class="nav-link">Пропуска</a>
       <a href="search.php" class="nav-link">Поиск пропуска</a>
-      <button id="open-login" class="ml-auto nav-link bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.2em] border border-white/10 shadow-lg shadow-cyan-500/10">Вход</button>
+      <div class="ml-auto flex items-center gap-2" id="auth-cta">
+        <div id="user-pill" class="hidden items-center gap-2 rounded-full border border-emerald-300/40 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-100 shadow-lg shadow-emerald-500/10 backdrop-blur">
+          <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span id="user-pill-name"><?php echo htmlspecialchars(currentUsername() ?? '', ENT_QUOTES, 'UTF-8'); ?></span>
+        </div>
+        <button id="open-login" class="nav-link bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.2em] border border-white/10 shadow-lg shadow-cyan-500/10 <?php echo currentUserId() ? 'hidden' : ''; ?>">Вход</button>
+        <button id="logout-btn" class="nav-link bg-gradient-to-r from-emerald-500/80 to-cyan-500/80 px-4 py-2 text-xs uppercase tracking-[0.2em] shadow-lg shadow-emerald-500/20 <?php echo currentUserId() ? '' : 'hidden'; ?>">Выход</button>
+      </div>
     </div>
   </nav>

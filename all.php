@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/auth.php';
+ensureSession();
 $TARGET_URLS = [
   'home'       => 'all.php',
   'dashboard'  => 'dashboard.php',
@@ -202,32 +204,28 @@ if ($intent && isset($TARGET_URLS[$intent])) {
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-5 w-5 text-gray-200"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 6l12 12M6 18L18 6" /></svg>
           </button>
         </div>
-        <form class="space-y-4 relative z-10">
+        <form class="space-y-4 relative z-10" id="passkey-form">
           <div class="space-y-2">
-            <label class="text-sm text-gray-300" for="login-email">Email или логин</label>
+            <label class="text-sm text-gray-300" for="login-username">Логин / имя оператора</label>
             <div class="relative">
-              <input id="login-email" type="email" placeholder="name@example.com" class="w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm placeholder:text-gray-500 focus:border-cyan-300/60 focus:outline-none focus:ring-0 backdrop-blur">
+              <input id="login-username" type="text" autocomplete="username" placeholder="operator" class="w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm placeholder:text-gray-500 focus:border-cyan-300/60 focus:outline-none focus:ring-0 backdrop-blur">
               <div class="pointer-events-none absolute inset-0 rounded-xl border border-white/5 blur-xl"></div>
             </div>
           </div>
-          <div class="space-y-2">
-            <label class="text-sm text-gray-300" for="login-pass">Пароль</label>
-            <div class="relative">
-              <input id="login-pass" type="password" placeholder="••••••••" class="w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm placeholder:text-gray-500 focus:border-emerald-300/60 focus:outline-none focus:ring-0 backdrop-blur">
-              <div class="pointer-events-none absolute inset-0 rounded-xl border border-white/5 blur-xl"></div>
-            </div>
+          <div class="rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-gray-300 leading-relaxed shadow-inner shadow-cyan-500/10">
+            Passkey заменяет пароль: сначала создайте ключ на этом устройстве, затем входите одним касанием. Данные хранятся на стороне браузера, сервер проверяет подпись через WebAuthn.
           </div>
-          <div class="flex items-center justify-between text-xs text-gray-400">
-            <label class="inline-flex items-center gap-2">
-              <input type="checkbox" class="h-4 w-4 rounded border-white/25 bg-white/5 text-cyan-400 focus:ring-0 focus:ring-offset-0">
-              Запомнить меня
-            </label>
-            <a href="#" class="text-cyan-300 hover:text-cyan-200 transition">Забыли пароль?</a>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button type="button" id="register-passkey" class="relative overflow-hidden rounded-xl bg-gradient-to-r from-fuchsia-500 via-cyan-500 to-emerald-500 px-4 py-3 font-semibold shadow-lg shadow-cyan-500/40 ring-1 ring-white/10">
+              <span class="relative z-10">Создать passkey</span>
+              <div class="absolute inset-0 bg-white/10 blur-xl opacity-0 hover:opacity-70 transition"></div>
+            </button>
+            <button type="button" id="login-passkey" class="rounded-xl border border-white/15 bg-black/30 px-4 py-3 font-semibold shadow-lg shadow-emerald-500/15 hover:border-emerald-300/50 transition">
+              Войти по passkey
+            </button>
           </div>
-          <button type="button" class="relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-sky-500 via-cyan-400 to-emerald-500 px-4 py-3 font-semibold shadow-lg shadow-cyan-500/30">
-            <span class="relative z-10">Войти</span>
-            <div class="absolute inset-0 bg-white/10 blur-xl opacity-0 animate-[pulse_4s_ease-in-out_infinite]"></div>
-          </button>
+          <p id="login-status" class="text-sm text-gray-300 min-h-[1.5rem]"></p>
+          <p class="text-xs text-gray-400">Поддерживаются браузеры с WebAuthn / passkeys. Если кнопки неактивны, обновите браузер или устройство.</p>
         </form>
       </div>
     </div>
@@ -280,6 +278,202 @@ if ($intent && isset($TARGET_URLS[$intent])) {
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') closeModal();
     });
+
+    const usernameInput = document.getElementById('login-username');
+    const statusEl = document.getElementById('login-status');
+    const registerBtn = document.getElementById('register-passkey');
+    const loginBtn = document.getElementById('login-passkey');
+    const logoutBtn = document.getElementById('logout-btn');
+    const userPill = document.getElementById('user-pill');
+    const userPillName = document.getElementById('user-pill-name');
+    const loginTrigger = document.getElementById('open-login');
+
+    const b64ToArrayBuffer = (b64) => {
+      const pad = '='.repeat((4 - (b64.length % 4)) % 4);
+      const normalized = (b64 + pad).replace(/-/g, '+').replace(/_/g, '/');
+      const str = atob(normalized);
+      const buffer = new Uint8Array(str.length);
+      for (let i = 0; i < str.length; i++) buffer[i] = str.charCodeAt(i);
+      return buffer.buffer;
+    };
+
+    const bufferToB64 = (buf) => {
+      const bytes = new Uint8Array(buf);
+      let binary = '';
+      bytes.forEach((b) => (binary += String.fromCharCode(b)));
+      return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    };
+
+    const setStatus = (msg, tone = 'info') => {
+      if (!statusEl) return;
+      statusEl.textContent = msg;
+      statusEl.classList.remove('text-emerald-300', 'text-amber-300', 'text-rose-300');
+      const toneMap = { success: 'text-emerald-300', warn: 'text-amber-300', error: 'text-rose-300' };
+      if (toneMap[tone]) statusEl.classList.add(toneMap[tone]);
+    };
+
+    const updateAuthUI = (payload) => {
+      const authed = payload?.authenticated;
+      if (authed) {
+        userPill?.classList.remove('hidden');
+        logoutBtn?.classList.remove('hidden');
+        loginTrigger?.classList.add('hidden');
+        if (payload.username) userPillName.textContent = payload.username;
+      } else {
+        userPill?.classList.add('hidden');
+        logoutBtn?.classList.add('hidden');
+        loginTrigger?.classList.remove('hidden');
+      }
+    };
+
+    const fetchSession = async () => {
+      try {
+        const res = await fetch('webauthn.php?action=session');
+        const data = await res.json();
+        updateAuthUI(data);
+        return data;
+      } catch (e) {
+        console.error(e);
+      }
+    };
+
+    const callEndpoint = async (action, body = {}) => {
+      const res = await fetch(`webauthn.php?action=${action}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      return { ok: res.ok, data };
+    };
+
+    const decodeCreationOptions = (options) => {
+      return {
+        ...options,
+        challenge: b64ToArrayBuffer(options.challenge),
+        user: { ...options.user, id: b64ToArrayBuffer(options.user.id) },
+        excludeCredentials: (options.excludeCredentials || []).map((c) => ({ ...c, id: b64ToArrayBuffer(c.id) })),
+      };
+    };
+
+    const decodeRequestOptions = (options) => {
+      return {
+        ...options,
+        challenge: b64ToArrayBuffer(options.challenge),
+        allowCredentials: (options.allowCredentials || []).map((c) => ({ ...c, id: b64ToArrayBuffer(c.id) })),
+      };
+    };
+
+    const ensureSupport = () => {
+      if (!window.PublicKeyCredential) {
+        setStatus('Passkeys не поддерживаются этим браузером', 'error');
+        return false;
+      }
+      return true;
+    };
+
+    const registerPasskey = async () => {
+      if (!ensureSupport()) return;
+      const username = usernameInput?.value.trim();
+      if (!username) {
+        setStatus('Укажите логин для создания ключа', 'warn');
+        return;
+      }
+      setStatus('Готовим челлендж для регистрации...');
+      registerBtn?.setAttribute('disabled', 'disabled');
+      loginBtn?.setAttribute('disabled', 'disabled');
+      try {
+        const { ok, data } = await callEndpoint('start-registration', { username });
+        if (!ok) throw new Error(data.error || 'Не удалось запросить регистрацию');
+        const options = decodeCreationOptions(data.publicKey);
+        const credential = await navigator.credentials.create({ publicKey: options });
+        const attestation = credential.response;
+        const authenticatorData = attestation.getAuthenticatorData ? attestation.getAuthenticatorData() : null;
+        const publicKey = attestation.getPublicKey ? attestation.getPublicKey() : null;
+        const payload = {
+          id: credential.id,
+          rawId: bufferToB64(credential.rawId),
+          type: credential.type,
+          response: {
+            clientDataJSON: bufferToB64(attestation.clientDataJSON),
+            authenticatorData: authenticatorData ? bufferToB64(authenticatorData) : null,
+            attestationObject: attestation.attestationObject ? bufferToB64(attestation.attestationObject) : null,
+            signature: null,
+            userHandle: null,
+          },
+          publicKey: publicKey ? bufferToB64(publicKey) : null,
+          publicKeyAlgorithm: attestation.getPublicKeyAlgorithm ? attestation.getPublicKeyAlgorithm() : null,
+          transports: attestation.getTransports ? attestation.getTransports().join(',') : null,
+        };
+        const finish = await callEndpoint('finish-registration', { credential: payload });
+        if (!finish.ok) throw new Error(finish.data.error || 'Не удалось завершить регистрацию');
+        setStatus('Passkey создан, вход выполнен', 'success');
+        updateAuthUI({ authenticated: true, username: finish.data.username });
+        closeModal();
+      } catch (err) {
+        console.error(err);
+        setStatus(err.message || 'Ошибка регистрации passkey', 'error');
+      } finally {
+        registerBtn?.removeAttribute('disabled');
+        loginBtn?.removeAttribute('disabled');
+      }
+    };
+
+    const loginPasskey = async () => {
+      if (!ensureSupport()) return;
+      const username = usernameInput?.value.trim();
+      if (!username) {
+        setStatus('Введите логин для входа', 'warn');
+        return;
+      }
+      setStatus('Запрашиваем ключ и челлендж входа...');
+      registerBtn?.setAttribute('disabled', 'disabled');
+      loginBtn?.setAttribute('disabled', 'disabled');
+      try {
+        const { ok, data } = await callEndpoint('start-login', { username });
+        if (!ok) throw new Error(data.error || 'Не удалось запросить вход');
+        const options = decodeRequestOptions(data.publicKey);
+        const assertion = await navigator.credentials.get({ publicKey: options });
+        const auth = assertion.response;
+        const payload = {
+          id: assertion.id,
+          rawId: bufferToB64(assertion.rawId),
+          type: assertion.type,
+          response: {
+            clientDataJSON: bufferToB64(auth.clientDataJSON),
+            authenticatorData: bufferToB64(auth.authenticatorData),
+            signature: bufferToB64(auth.signature),
+            userHandle: auth.userHandle ? bufferToB64(auth.userHandle) : null,
+          },
+        };
+        const finish = await callEndpoint('finish-login', { credential: payload });
+        if (!finish.ok) throw new Error(finish.data.error || 'Не удалось завершить вход');
+        setStatus('Вход выполнен по passkey', 'success');
+        updateAuthUI({ authenticated: true, username: finish.data.username });
+        closeModal();
+      } catch (err) {
+        console.error(err);
+        setStatus(err.message || 'Ошибка входа', 'error');
+      } finally {
+        registerBtn?.removeAttribute('disabled');
+        loginBtn?.removeAttribute('disabled');
+      }
+    };
+
+    const logout = async () => {
+      try {
+        await callEndpoint('logout');
+        updateAuthUI({ authenticated: false });
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    registerBtn?.addEventListener('click', registerPasskey);
+    loginBtn?.addEventListener('click', loginPasskey);
+    logoutBtn?.addEventListener('click', logout);
+
+    fetchSession();
   });
 </script>
 <?php include 'footer.php'; ?>

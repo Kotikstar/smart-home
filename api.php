@@ -2,6 +2,9 @@
 require 'db.php'; // $pdo для базы пропусков
 require 'config.php'; // $conn для базы топливной системы (mysqli)
 require 'functions.php';
+require 'auth.php';
+
+ensureSession();
 
 function jsonResponse($data, int $status = 200): void {
     http_response_code($status);
@@ -40,6 +43,12 @@ function getTotalDispensed(mysqli $conn): float {
 
 // Проверка пропуска по номеру (обратная совместимость)
 if (isset($_GET['plate']) && !isset($_GET['resource'])) {
+    if (!currentUserId()) {
+        http_response_code(401);
+        header('Content-Type: text/plain');
+        echo 'auth';
+        exit;
+    }
     header('Content-Type: text/plain');
     $plate = preg_replace('/\s+/', '', $_GET['plate']);
     $stmt = $pdo->prepare("SELECT COUNT(*) FROM passes WHERE license_plate = ? AND (pass_type = 'permanent' OR (pass_type = 'temporary' AND end_time > NOW()))");
@@ -54,6 +63,10 @@ $action = $_GET['action'] ?? null;
 
 if (!$resource) {
     jsonResponse(['error' => 'Укажите параметр resource']);
+}
+
+if (!currentUserId()) {
+    jsonResponse(['error' => 'Требуется вход по passkey'], 401);
 }
 
 switch ($resource) {
