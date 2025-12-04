@@ -289,6 +289,7 @@ if ($intent && isset($TARGET_URLS[$intent])) {
       diesel: 'Цены',
       passes: 'Пропуска',
       service: 'Сервис',
+      carbook: 'Car Book',
     };
 
     const openModal = () => {
