@@ -75,15 +75,15 @@ if ($intent && isset($TARGET_URLS[$intent])) {
 ?>
 <?php include 'header.php'; ?>
 <main class="relative max-w-6xl mx-auto px-4 py-12 space-y-10 z-10">
-  <div class="absolute -left-10 -top-16 h-48 w-48 rounded-full bg-cyan-500/15 blur-xl"></div>
-  <div class="absolute right-0 top-24 h-56 w-56 rounded-full bg-emerald-500/12 blur-xl"></div>
-  <div class="absolute -right-20 bottom-10 h-64 w-64 rounded-full bg-fuchsia-500/10 blur-xl"></div>
+  <div class="absolute -left-10 -top-16 h-48 w-48 rounded-full bg-cyan-500/15"></div>
+  <div class="absolute right-0 top-24 h-56 w-56 rounded-full bg-emerald-500/12"></div>
+  <div class="absolute -right-20 bottom-10 h-64 w-64 rounded-full bg-fuchsia-500/10"></div>
 
   <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-10 shadow-2xl neon-border">
     <div class="glow-ring" aria-hidden="true"></div>
     <div class="absolute inset-0 opacity-60" aria-hidden="true">
-      <div class="absolute left-10 top-6 h-28 w-28 rounded-full bg-blue-500/24 blur-2xl mix-blend-screen"></div>
-      <div class="absolute right-6 -bottom-6 h-40 w-40 rounded-full bg-cyan-400/16 blur-2xl mix-blend-screen"></div>
+      <div class="absolute left-10 top-6 h-28 w-28 rounded-full bg-blue-500/24 mix-blend-screen"></div>
+      <div class="absolute right-6 -bottom-6 h-40 w-40 rounded-full bg-cyan-400/16 mix-blend-screen"></div>
       <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.18),_transparent_45%)]"></div>
     </div>
     <div class="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
@@ -95,10 +95,10 @@ if ($intent && isset($TARGET_URLS[$intent])) {
           <a href="dashboard.php" data-requires-auth="true" class="glow-cta inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-sky-500 via-cyan-400 to-emerald-500 px-5 py-3 font-semibold shadow-lg shadow-cyan-500/30">
             <span>Панель TRK</span>
           </a>
-          <a href="passes.php" data-requires-auth="true" class="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-5 py-3 font-semibold backdrop-blur hover:border-emerald-300/40 transition">
+          <a href="passes.php" data-requires-auth="true" class="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-5 py-3 font-semibold hover:border-emerald-300/40 transition">
             Пропуска
           </a>
-          <button id="open-login-hero" class="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-black/30 px-5 py-3 font-semibold backdrop-blur hover:border-cyan-300/60 transition shadow-lg shadow-cyan-500/10">Войти</button>
+          <button id="open-login-hero" class="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-black/30 px-5 py-3 font-semibold hover:border-cyan-300/60 transition shadow-lg shadow-cyan-500/10">Войти</button>
         </div>
       </div>
       <div class="grid grid-cols-2 gap-3 text-sm text-gray-200">
@@ -158,7 +158,7 @@ if ($intent && isset($TARGET_URLS[$intent])) {
   </section>
 
   <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
-    <div class="rounded-2xl border border-white/10 bg-white/5 p-5 space-y-3 shadow-lg shadow-cyan-500/10 backdrop-blur-xl">
+    <div class="rounded-2xl border border-white/10 bg-white/5 p-5 space-y-3 shadow-lg shadow-cyan-500/10">
       <p class="text-xs uppercase tracking-[0.25em] text-gray-400">Быстрые ссылки</p>
       <div class="flex flex-wrap gap-2 text-sm">
         <a class="px-3 py-2 rounded-lg border border-white/10 bg-white/5 hover:border-cyan-300/40 transition" data-requires-auth="true" data-permission="dashboard" href="dashboard.php">/dashboard</a>
@@ -171,7 +171,7 @@ if ($intent && isset($TARGET_URLS[$intent])) {
         <a class="px-3 py-2 rounded-lg border border-white/10 bg-white/5 hover:border-cyan-300/40 transition" data-requires-auth="true" data-permission="passes" href="search.php">/search</a>
       </div>
     </div>
-    <div class="rounded-2xl border border-white/10 bg-white/5 p-5 space-y-3 shadow-lg shadow-blue-500/10 backdrop-blur-lg">
+    <div class="rounded-2xl border border-white/10 bg-white/5 p-5 space-y-3 shadow-lg shadow-blue-500/10">
       <p class="text-xs uppercase tracking-[0.25em] text-gray-400">URL / # Алиасы</p>
       <p class="text-gray-200 text-sm">Используйте ?to=trk, /passes или #logs — страница сама перенаправит в нужный раздел.</p>
       <div class="text-xs text-gray-400 space-y-1">
@@ -182,7 +182,7 @@ if ($intent && isset($TARGET_URLS[$intent])) {
         <p><span class="font-semibold text-gray-200">Поиск:</span> search, plate, lpr</p>
       </div>
     </div>
-    <div class="rounded-2xl border border-white/10 bg-white/5 p-5 space-y-3 shadow-lg shadow-emerald-500/10 backdrop-blur-lg">
+    <div class="rounded-2xl border border-white/10 bg-white/5 p-5 space-y-3 shadow-lg shadow-emerald-500/10">
       <p class="text-xs uppercase tracking-[0.25em] text-gray-400">API</p>
       <p class="text-gray-200 text-sm">Проверка пропуска: <code class="bg-black/40 px-2 py-1 rounded text-xs border border-white/10">/api.php?plate=AAA000</code></p>
       <p class="text-gray-200 text-sm">Ресурсы TRK: <code class="bg-black/40 px-2 py-1 rounded text-xs border border-white/10">/api.php?resource=fuel</code></p>
@@ -190,7 +190,7 @@ if ($intent && isset($TARGET_URLS[$intent])) {
     </div>
   </section>
 
-  <section id="admin-panel" class="hidden rounded-3xl border border-amber-200/20 bg-amber-50/5 p-6 shadow-xl shadow-amber-500/10 backdrop-blur-xl space-y-4">
+  <section id="admin-panel" class="hidden rounded-3xl border border-amber-200/20 bg-amber-50/5 p-6 shadow-xl shadow-amber-500/10 space-y-4">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div>
         <p class="text-xs uppercase tracking-[0.3em] text-amber-200/70">Администрирование</p>
@@ -204,12 +204,12 @@ if ($intent && isset($TARGET_URLS[$intent])) {
   </section>
 </main>
 
-<div id="login-modal" class="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center opacity-0 pointer-events-none transition duration-300 z-50">
-  <div class="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(14,165,233,0.16),transparent_32%),radial-gradient(circle_at_80%_30%,rgba(16,185,129,0.16),transparent_36%)] blur-2xl"></div>
+<div id="login-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center opacity-0 pointer-events-none transition duration-300 z-50">
+  <div class="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(14,165,233,0.16),transparent_32%),radial-gradient(circle_at_80%_30%,rgba(16,185,129,0.16),transparent_36%)]"></div>
   <div class="relative w-full max-w-lg p-[1px] rounded-[26px] bg-gradient-to-br from-cyan-400/30 via-fuchsia-500/22 to-emerald-500/30 shadow-2xl shadow-cyan-500/20">
-    <div class="relative rounded-[24px] bg-slate-900/85 backdrop-blur-xl border border-white/10 p-8 modal-enter">
-      <div class="absolute -top-10 right-6 h-24 w-24 rounded-full bg-cyan-500/24 blur-2xl mix-blend-screen"></div>
-      <div class="absolute -bottom-12 -left-12 h-32 w-32 rounded-full bg-fuchsia-500/18 blur-2xl mix-blend-screen"></div>
+    <div class="relative rounded-[24px] bg-slate-900/85 border border-white/10 p-8 modal-enter">
+      <div class="absolute -top-10 right-6 h-24 w-24 rounded-full bg-cyan-500/24 mix-blend-screen"></div>
+      <div class="absolute -bottom-12 -left-12 h-32 w-32 rounded-full bg-fuchsia-500/18 mix-blend-screen"></div>
       <div class="relative space-y-6">
         <div class="flex items-start justify-between gap-3">
           <div>
@@ -226,8 +226,8 @@ if ($intent && isset($TARGET_URLS[$intent])) {
           <div class="space-y-2">
             <label class="text-sm text-gray-300" for="login-username">Логин / имя оператора</label>
             <div class="relative">
-              <input id="login-username" type="text" autocomplete="username" placeholder="operator" class="w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm placeholder:text-gray-500 focus:border-cyan-300/60 focus:outline-none focus:ring-0 backdrop-blur">
-              <div class="pointer-events-none absolute inset-0 rounded-xl border border-white/5 blur-xl"></div>
+              <input id="login-username" type="text" autocomplete="username" placeholder="operator" class="w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm placeholder:text-gray-500 focus:border-cyan-300/60 focus:outline-none focus:ring-0">
+              <div class="pointer-events-none absolute inset-0 rounded-xl border border-white/5"></div>
             </div>
           </div>
           <div class="rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-gray-300 leading-relaxed shadow-inner shadow-cyan-500/10">
@@ -236,7 +236,7 @@ if ($intent && isset($TARGET_URLS[$intent])) {
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <button type="button" id="register-passkey" class="relative overflow-hidden rounded-xl bg-gradient-to-r from-fuchsia-500 via-cyan-500 to-emerald-500 px-4 py-3 font-semibold shadow-lg shadow-cyan-500/40 ring-1 ring-white/10">
               <span class="relative z-10">Создать passkey</span>
-              <div class="absolute inset-0 bg-white/10 blur-xl opacity-0 hover:opacity-70 transition"></div>
+              <div class="absolute inset-0 bg-white/10 opacity-0 hover:opacity-70 transition"></div>
             </button>
             <button type="button" id="login-passkey" class="rounded-xl border border-white/15 bg-black/30 px-4 py-3 font-semibold shadow-lg shadow-emerald-500/15 hover:border-emerald-300/50 transition">
               Войти по passkey

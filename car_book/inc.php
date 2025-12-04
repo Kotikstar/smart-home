@@ -218,6 +218,21 @@ function saveCarBookExpense(PDO $pdo, array $data): void
     ]);
 }
 
+function updateCarBookExpense(PDO $pdo, array $data): void
+{
+    $stmt = $pdo->prepare('UPDATE car_book_expenses SET title = :title, cost = :cost WHERE id = :id AND vehicle_id = :vehicle_id');
+    $stmt->execute([
+        ':id' => $data['id'],
+        ':vehicle_id' => $data['vehicle_id'],
+        ':title' => $data['title'],
+        ':cost' => $data['cost'],
+    ]);
+
+    if ($stmt->rowCount() === 0) {
+        throw new RuntimeException('Расход не найден для обновления');
+    }
+}
+
 function saveCarBookWish(PDO $pdo, array $data): void
 {
     $stmt = $pdo->prepare('INSERT INTO car_book_wishes (vehicle_id, title, is_done) VALUES (:vehicle_id, :title, 0)');

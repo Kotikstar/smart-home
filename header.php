@@ -56,7 +56,6 @@ $currentLang = currentLang();
       opacity: 0.35;
     }
     .glass-nav {
-      backdrop-filter: blur(14px);
       background: rgba(17, 24, 39, 0.75);
       border: 1px solid rgba(255, 255, 255, 0.08);
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
@@ -115,7 +114,6 @@ $currentLang = currentLang();
       background: radial-gradient(circle at 30% 30%, rgba(59,130,246,0.28), transparent 45%),
                   radial-gradient(circle at 70% 70%, rgba(16,185,129,0.28), transparent 46%);
       opacity: 0.35;
-      filter: blur(14px);
     }
     .neon-border::after {
       content: '';
@@ -123,7 +121,6 @@ $currentLang = currentLang();
       inset: 1px;
       border-radius: 14px;
       background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
-      backdrop-filter: blur(12px);
       z-index: 1;
     }
     .modal-enter {
@@ -141,7 +138,6 @@ $currentLang = currentLang();
       border-radius: 32px;
       background: radial-gradient(circle at 30% 30%, rgba(34, 211, 238, 0.3), transparent 40%),
                   radial-gradient(circle at 70% 70%, rgba(99, 102, 241, 0.25), transparent 42%);
-      filter: blur(32px);
       opacity: 0.45;
     }
   </style>
@@ -195,7 +191,7 @@ $currentLang = currentLang();
             </select>
           </form>
           <div class="flex flex-col sm:flex-row sm:items-center gap-2" id="auth-cta">
-            <div id="user-pill" class="hidden items-center gap-2 rounded-full border border-emerald-300/40 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-100 shadow-lg shadow-emerald-500/10 backdrop-blur">
+            <div id="user-pill" class="hidden items-center gap-2 rounded-full border border-emerald-300/40 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-100 shadow-lg shadow-emerald-500/10">
               <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
               <span id="user-pill-name"><?php echo htmlspecialchars(currentUsername() ?? '', ENT_QUOTES, 'UTF-8'); ?></span>
             </div>

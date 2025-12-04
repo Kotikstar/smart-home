@@ -81,6 +81,22 @@ try {
             ]);
             echo json_encode(['ok' => true]);
             break;
+        case 'update_expense':
+            $vehicleId = (int) ($_POST['vehicle_id'] ?? 0);
+            $expenseId = (int) ($_POST['id'] ?? 0);
+            $title = trim((string) ($_POST['title'] ?? ''));
+            $cost = isset($_POST['cost']) ? (float) $_POST['cost'] : 0;
+            if ($vehicleId <= 0 || $expenseId <= 0 || $title === '') {
+                throw new RuntimeException('Неверные данные расходов');
+            }
+            updateCarBookExpense($pdo, [
+                'id' => $expenseId,
+                'vehicle_id' => $vehicleId,
+                'title' => $title,
+                'cost' => $cost,
+            ]);
+            echo json_encode(['ok' => true]);
+            break;
         case 'add_wish':
             $vehicleId = (int) ($_POST['vehicle_id'] ?? 0);
             $title = trim((string) ($_POST['title'] ?? ''));
