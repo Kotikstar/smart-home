@@ -49,8 +49,34 @@ CREATE TABLE user_permissions (
     can_diesel TINYINT(1) DEFAULT 0,
     can_passes TINYINT(1) DEFAULT 0,
     can_service TINYINT(1) DEFAULT 0,
+    can_carbook TINYINT(1) DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS car_book_vehicles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(150) NOT NULL,
+    brand VARCHAR(100) DEFAULT NULL,
+    license_plate VARCHAR(50) DEFAULT NULL,
+    status VARCHAR(32) NOT NULL DEFAULT 'ready',
+    mileage INT DEFAULT 0,
+    next_service_date DATE DEFAULT NULL,
+    last_service_at DATE DEFAULT NULL,
+    notes TEXT DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS car_book_events (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    vehicle_id INT NOT NULL,
+    event_type VARCHAR(64) NOT NULL,
+    status_after VARCHAR(32) DEFAULT NULL,
+    mileage INT DEFAULT NULL,
+    note TEXT DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (vehicle_id) REFERENCES car_book_vehicles(id) ON DELETE CASCADE
 );
 
 -- Пример данных
