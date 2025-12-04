@@ -11,10 +11,37 @@ const PERMISSION_KEYS = [
     'diesel',
     'passes',
     'service',
+    'carbook',
 ];
+
+function ensurePermissionColumns(PDO $pdo): void
+{
+    static $checked = false;
+    if ($checked) {
+        return;
+    }
+    $checked = true;
+
+    $stmt = $pdo->query("SHOW COLUMNS FROM user_permissions");
+    $existing = [];
+    foreach ($stmt->fetchAll() as $column) {
+        if (isset($column['Field'])) {
+            $existing[] = $column['Field'];
+        }
+    }
+
+    foreach (PERMISSION_KEYS as $key) {
+        $column = 'can_' . $key;
+        if (!in_array($column, $existing, true)) {
+            $pdo->exec("ALTER TABLE user_permissions ADD COLUMN {$column} TINYINT(1) DEFAULT 0");
+        }
+    }
+}
 
 use lbuchs\WebAuthn\WebAuthn;
 use lbuchs\WebAuthn\WebAuthnException;
+
+ensurePermissionColumns($pdo);
 
 function ensureSession(): void
 {
