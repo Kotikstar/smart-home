@@ -74,7 +74,26 @@ CREATE TABLE IF NOT EXISTS car_book_events (
     event_type VARCHAR(64) NOT NULL,
     status_after VARCHAR(32) DEFAULT NULL,
     mileage INT DEFAULT NULL,
+    cost DECIMAL(12,2) DEFAULT NULL,
     note TEXT DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (vehicle_id) REFERENCES car_book_vehicles(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS car_book_wishes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    vehicle_id INT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    is_done TINYINT(1) NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (vehicle_id) REFERENCES car_book_vehicles(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS car_book_expenses (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    vehicle_id INT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    cost DECIMAL(12,2) NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (vehicle_id) REFERENCES car_book_vehicles(id) ON DELETE CASCADE
 );

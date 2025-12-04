@@ -24,12 +24,41 @@ function ensureCarBookSchema(PDO $pdo): void
         event_type VARCHAR(64) NOT NULL,
         status_after VARCHAR(32) DEFAULT NULL,
         mileage INT DEFAULT NULL,
+        cost DECIMAL(12,2) DEFAULT NULL,
         note TEXT DEFAULT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (vehicle_id) REFERENCES car_book_vehicles(id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
 
+    $pdo->exec('CREATE TABLE IF NOT EXISTS car_book_wishes (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        vehicle_id INT NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        is_done TINYINT(1) NOT NULL DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (vehicle_id) REFERENCES car_book_vehicles(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
+
+    $pdo->exec('CREATE TABLE IF NOT EXISTS car_book_expenses (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        vehicle_id INT NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        cost DECIMAL(12,2) NOT NULL DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (vehicle_id) REFERENCES car_book_vehicles(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
+
+    ensureCarBookColumns($pdo);
+
     seedCarBookIfEmpty($pdo);
+}
+
+function ensureCarBookColumns(PDO $pdo): void
+{
+    $columns = $pdo->query('SHOW COLUMNS FROM car_book_events')->fetchAll(PDO::FETCH_COLUMN);
+    if (!in_array('cost', $columns, true)) {
+        $pdo->exec('ALTER TABLE car_book_events ADD COLUMN cost DECIMAL(12,2) DEFAULT NULL AFTER mileage');
+    }
 }
 
 function seedCarBookIfEmpty(PDO $pdo): void
@@ -50,10 +79,20 @@ function seedCarBookIfEmpty(PDO $pdo): void
         $stmt->execute([$vehicle['title'], $vehicle['brand'], $vehicle['license_plate'], $vehicle['status'], $vehicle['mileage'], $vehicle['next_service_date'], $vehicle['notes']]);
     }
 
-    $serviceStmt = $pdo->prepare('INSERT INTO car_book_events (vehicle_id, event_type, status_after, mileage, note) VALUES (?, ?, ?, ?, ?)');
-    $serviceStmt->execute([1, 'service', 'ready', 124500, 'После ремонта тормозов']);
-    $serviceStmt->execute([2, 'diagnostic', 'maintenance', 201340, 'Ждёт замену масла']);
-    $serviceStmt->execute([3, 'reservation', 'reserved', 85320, 'Закреплена за ответственным смены']);
+    $serviceStmt = $pdo->prepare('INSERT INTO car_book_events (vehicle_id, event_type, status_after, mileage, cost, note) VALUES (?, ?, ?, ?, ?, ?)');
+    $serviceStmt->execute([1, 'service', 'ready', 124500, 12500, 'После ремонта тормозов']);
+    $serviceStmt->execute([2, 'diagnostic', 'maintenance', 201340, 5500, 'Ждёт замену масла']);
+    $serviceStmt->execute([3, 'reservation', 'reserved', 85320, null, 'Закреплена за ответственным смены']);
+
+    $wishStmt = $pdo->prepare('INSERT INTO car_book_wishes (vehicle_id, title, is_done) VALUES (?, ?, ?)');
+    $wishStmt->execute([1, 'Заменить лампы ближнего света', 0]);
+    $wishStmt->execute([1, 'Поставить зимнюю резину', 1]);
+    $wishStmt->execute([2, 'Купить аптечку', 0]);
+
+    $expenseStmt = $pdo->prepare('INSERT INTO car_book_expenses (vehicle_id, title, cost) VALUES (?, ?, ?)');
+    $expenseStmt->execute([1, 'ТО и тормозные колодки', 12500]);
+    $expenseStmt->execute([2, 'Диагностика подвески', 5500]);
+    $expenseStmt->execute([3, 'Мойка и уборка салона', 1800]);
 }
 
 function carBookStatusOptions(): array
@@ -112,6 +151,88 @@ function fetchCarBookEvents(PDO $pdo, int $limit = 15): array
     return $stmt->fetchAll();
 }
 
+function fetchCarBookEventsByVehicle(PDO $pdo, int $vehicleId, int $limit = 30): array
+{
+    $stmt = $pdo->prepare('SELECT * FROM car_book_events WHERE vehicle_id = ? ORDER BY created_at DESC LIMIT ?');
+    $stmt->bindValue(1, $vehicleId, PDO::PARAM_INT);
+    $stmt->bindValue(2, $limit, PDO::PARAM_INT);
+    $stmt->execute();
+    return $stmt->fetchAll();
+}
+
+function fetchCarBookTotals(PDO $pdo): array
+{
+    $totalVehicles = (int) $pdo->query('SELECT COUNT(*) FROM car_book_vehicles')->fetchColumn();
+    $totalEvents = (int) $pdo->query('SELECT COUNT(*) FROM car_book_events')->fetchColumn();
+    $totalCost = (float) $pdo->query('SELECT IFNULL(SUM(cost),0) FROM car_book_events')->fetchColumn();
+    $extraCost = (float) $pdo->query('SELECT IFNULL(SUM(cost),0) FROM car_book_expenses')->fetchColumn();
+
+    return [
+        'vehicles' => $totalVehicles,
+        'events' => $totalEvents,
+        'cost' => $totalCost + $extraCost,
+    ];
+}
+
+function fetchVehicleExpenses(PDO $pdo, int $vehicleId): array
+{
+    $stmt = $pdo->prepare('SELECT * FROM car_book_expenses WHERE vehicle_id = ? ORDER BY created_at DESC');
+    $stmt->execute([$vehicleId]);
+    return $stmt->fetchAll();
+}
+
+function fetchVehicleWishes(PDO $pdo, int $vehicleId): array
+{
+    $stmt = $pdo->prepare('SELECT * FROM car_book_wishes WHERE vehicle_id = ? ORDER BY is_done ASC, created_at DESC');
+    $stmt->execute([$vehicleId]);
+    return $stmt->fetchAll();
+}
+
+function totalVehicleExpenses(PDO $pdo, int $vehicleId): float
+{
+    $eventStmt = $pdo->prepare('SELECT IFNULL(SUM(cost),0) FROM car_book_events WHERE vehicle_id = ?');
+    $eventStmt->execute([$vehicleId]);
+    $eventCost = (float) $eventStmt->fetchColumn();
+
+    $expenseStmt = $pdo->prepare('SELECT IFNULL(SUM(cost),0) FROM car_book_expenses WHERE vehicle_id = ?');
+    $expenseStmt->execute([$vehicleId]);
+    $extra = (float) $expenseStmt->fetchColumn();
+
+    return $eventCost + $extra;
+}
+
+function totalVehicleEvents(PDO $pdo, int $vehicleId): int
+{
+    $stmt = $pdo->prepare('SELECT COUNT(*) FROM car_book_events WHERE vehicle_id = ?');
+    $stmt->execute([$vehicleId]);
+    return (int) $stmt->fetchColumn();
+}
+
+function saveCarBookExpense(PDO $pdo, array $data): void
+{
+    $stmt = $pdo->prepare('INSERT INTO car_book_expenses (vehicle_id, title, cost) VALUES (:vehicle_id, :title, :cost)');
+    $stmt->execute([
+        ':vehicle_id' => $data['vehicle_id'],
+        ':title' => $data['title'],
+        ':cost' => $data['cost'],
+    ]);
+}
+
+function saveCarBookWish(PDO $pdo, array $data): void
+{
+    $stmt = $pdo->prepare('INSERT INTO car_book_wishes (vehicle_id, title, is_done) VALUES (:vehicle_id, :title, 0)');
+    $stmt->execute([
+        ':vehicle_id' => $data['vehicle_id'],
+        ':title' => $data['title'],
+    ]);
+}
+
+function toggleCarBookWish(PDO $pdo, int $id): void
+{
+    $stmt = $pdo->prepare('UPDATE car_book_wishes SET is_done = NOT is_done WHERE id = :id');
+    $stmt->execute([':id' => $id]);
+}
+
 function saveCarBookVehicle(PDO $pdo, array $data): int
 {
     $stmt = $pdo->prepare('INSERT INTO car_book_vehicles (title, brand, license_plate, status, mileage, next_service_date, notes) VALUES (:title, :brand, :license_plate, :status, :mileage, :next_service_date, :notes)');
@@ -135,12 +256,13 @@ function updateCarBookStatus(PDO $pdo, int $vehicleId, string $status): void
 
 function logCarBookEvent(PDO $pdo, array $data): void
 {
-    $stmt = $pdo->prepare('INSERT INTO car_book_events (vehicle_id, event_type, status_after, mileage, note) VALUES (:vehicle_id, :event_type, :status_after, :mileage, :note)');
+    $stmt = $pdo->prepare('INSERT INTO car_book_events (vehicle_id, event_type, status_after, mileage, cost, note) VALUES (:vehicle_id, :event_type, :status_after, :mileage, :cost, :note)');
     $stmt->execute([
         ':vehicle_id' => $data['vehicle_id'],
         ':event_type' => $data['event_type'],
         ':status_after' => $data['status_after'] ?? null,
         ':mileage' => $data['mileage'] ?? null,
+        ':cost' => $data['cost'] ?? null,
         ':note' => $data['note'] ?? null,
     ]);
 

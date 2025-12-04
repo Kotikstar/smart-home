@@ -47,6 +47,7 @@ try {
                 'event_type' => $eventType,
                 'status_after' => $statusAfter,
                 'mileage' => isset($_POST['mileage']) ? (int) $_POST['mileage'] : null,
+                'cost' => isset($_POST['cost']) && $_POST['cost'] !== '' ? (float) $_POST['cost'] : null,
                 'note' => trim((string) ($_POST['note'] ?? '')) ?: null,
             ]);
             echo json_encode(['ok' => true]);
@@ -64,6 +65,40 @@ try {
                 'status_after' => $status,
                 'note' => null,
             ]);
+            echo json_encode(['ok' => true]);
+            break;
+        case 'add_expense':
+            $vehicleId = (int) ($_POST['vehicle_id'] ?? 0);
+            $title = trim((string) ($_POST['title'] ?? ''));
+            $cost = isset($_POST['cost']) ? (float) $_POST['cost'] : 0;
+            if ($vehicleId <= 0 || $title === '') {
+                throw new RuntimeException('Неверные данные расходов');
+            }
+            saveCarBookExpense($pdo, [
+                'vehicle_id' => $vehicleId,
+                'title' => $title,
+                'cost' => $cost,
+            ]);
+            echo json_encode(['ok' => true]);
+            break;
+        case 'add_wish':
+            $vehicleId = (int) ($_POST['vehicle_id'] ?? 0);
+            $title = trim((string) ($_POST['title'] ?? ''));
+            if ($vehicleId <= 0 || $title === '') {
+                throw new RuntimeException('Неверные данные хотелки');
+            }
+            saveCarBookWish($pdo, [
+                'vehicle_id' => $vehicleId,
+                'title' => $title,
+            ]);
+            echo json_encode(['ok' => true]);
+            break;
+        case 'toggle_wish':
+            $wishId = (int) ($_POST['id'] ?? 0);
+            if ($wishId <= 0) {
+                throw new RuntimeException('Не найдена хотелка');
+            }
+            toggleCarBookWish($pdo, $wishId);
             echo json_encode(['ok' => true]);
             break;
         default:

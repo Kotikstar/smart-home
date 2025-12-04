@@ -9,6 +9,26 @@ ensureCarBookSchema($pdo);
 $vehicles = fetchCarBookVehicles($pdo);
 $stats = fetchCarBookStats($vehicles);
 $events = fetchCarBookEvents($pdo);
+$totals = fetchCarBookTotals($pdo);
+
+$currentVehicleId = isset($_GET['vehicle_id']) ? (int) $_GET['vehicle_id'] : (int) ($vehicles[0]['id'] ?? 0);
+$activeVehicle = null;
+foreach ($vehicles as $v) {
+    if ((int) $v['id'] === $currentVehicleId) {
+        $activeVehicle = $v;
+        break;
+    }
+}
+if (!$activeVehicle && !empty($vehicles)) {
+    $activeVehicle = $vehicles[0];
+    $currentVehicleId = (int) $activeVehicle['id'];
+}
+
+$vehicleEvents = $activeVehicle ? fetchCarBookEventsByVehicle($pdo, $currentVehicleId) : [];
+$vehicleWishes = $activeVehicle ? fetchVehicleWishes($pdo, $currentVehicleId) : [];
+$vehicleExpenses = $activeVehicle ? fetchVehicleExpenses($pdo, $currentVehicleId) : [];
+$vehicleExpensesTotal = $activeVehicle ? totalVehicleExpenses($pdo, $currentVehicleId) : 0;
+$vehicleEventsTotal = $activeVehicle ? totalVehicleEvents($pdo, $currentVehicleId) : 0;
 
 include __DIR__ . '/header.php';
 ?>
@@ -43,8 +63,130 @@ include __DIR__ . '/header.php';
           <div class="text-3xl font-semibold text-fuchsia-50"><?php echo (int) $stats['reserved']; ?></div>
         </div>
       </div>
+      <div class="grid gap-4 md:grid-cols-3">
+        <div class="rounded-2xl border border-sky-300/40 bg-sky-400/10 p-4 shadow-lg shadow-sky-500/10">
+          <div class="text-xs uppercase tracking-[0.2em] text-sky-100/80 flex items-center gap-2">
+            <span class="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-sky-500/20 text-lg">🚗</span>
+            <span><?php echo htmlspecialchars(t('carbook.stats.total'), ENT_QUOTES, 'UTF-8'); ?></span>
+          </div>
+          <div class="text-3xl font-semibold text-sky-50"><?php echo (int) $totals['vehicles']; ?></div>
+        </div>
+        <div class="rounded-2xl border border-cyan-300/40 bg-cyan-400/10 p-4 shadow-lg shadow-cyan-500/10">
+          <div class="text-xs uppercase tracking-[0.2em] text-cyan-100/80 flex items-center gap-2">
+            <span class="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-cyan-500/20 text-lg">📝</span>
+            <span><?php echo htmlspecialchars(t('carbook.stats.events'), ENT_QUOTES, 'UTF-8'); ?></span>
+          </div>
+          <div class="text-3xl font-semibold text-cyan-50"><?php echo (int) $totals['events']; ?></div>
+        </div>
+        <div class="rounded-2xl border border-amber-300/40 bg-amber-400/10 p-4 shadow-lg shadow-amber-500/10">
+          <div class="text-xs uppercase tracking-[0.2em] text-amber-100/80 flex items-center gap-2">
+            <span class="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/20 text-lg">💰</span>
+            <span><?php echo htmlspecialchars(t('carbook.stats.expenses'), ENT_QUOTES, 'UTF-8'); ?></span>
+          </div>
+          <div class="text-3xl font-semibold text-amber-50"><?php echo number_format($totals['cost'], 0, '.', ' '); ?> ₽</div>
+        </div>
+      </div>
     </div>
   </section>
+
+  <?php if ($activeVehicle): ?>
+    <section class="neon-border overflow-hidden relative">
+      <div class="glow-ring"></div>
+      <div class="relative px-6 py-6 space-y-4">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div>
+            <div class="text-xs uppercase tracking-[0.2em] text-white/60"><?php echo htmlspecialchars(t('carbook.section.detail'), ENT_QUOTES, 'UTF-8'); ?></div>
+            <h2 class="text-xl font-semibold"><?php echo htmlspecialchars($activeVehicle['title'], ENT_QUOTES, 'UTF-8'); ?></h2>
+          </div>
+          <form method="get" class="flex gap-2 items-center">
+            <label class="text-xs uppercase tracking-[0.2em] text-white/60"><?php echo htmlspecialchars(t('carbook.form.name'), ENT_QUOTES, 'UTF-8'); ?></label>
+            <select name="vehicle_id" onchange="this.form.submit()" class="rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-sm min-w-[180px]">
+              <?php foreach ($vehicles as $vehicle): ?>
+                <option value="<?php echo (int) $vehicle['id']; ?>" <?php echo $vehicle['id'] == $currentVehicleId ? 'selected' : ''; ?>><?php echo htmlspecialchars($vehicle['title'], ENT_QUOTES, 'UTF-8'); ?></option>
+              <?php endforeach; ?>
+            </select>
+          </form>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-4">
+          <div class="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-2">
+            <div class="flex items-center justify-between text-sm text-white/70">
+              <span><?php echo htmlspecialchars(t('carbook.card.mileage'), ENT_QUOTES, 'UTF-8'); ?></span>
+              <span class="font-semibold text-white"><?php echo (int) $activeVehicle['mileage']; ?> км</span>
+            </div>
+            <div class="flex items-center justify-between text-sm text-white/70">
+              <span><?php echo htmlspecialchars(t('carbook.card.next_service'), ENT_QUOTES, 'UTF-8'); ?></span>
+              <span class="font-semibold text-white"><?php echo $activeVehicle['next_service_date'] ? htmlspecialchars($activeVehicle['next_service_date'], ENT_QUOTES, 'UTF-8') : '—'; ?></span>
+            </div>
+            <div class="flex items-center justify-between text-sm text-white/70">
+              <span><?php echo htmlspecialchars(t('carbook.stats.events'), ENT_QUOTES, 'UTF-8'); ?></span>
+              <span class="font-semibold text-white"><?php echo (int) $vehicleEventsTotal; ?></span>
+            </div>
+            <div class="flex items-center justify-between text-sm text-white/70">
+              <span><?php echo htmlspecialchars(t('carbook.card.expenses'), ENT_QUOTES, 'UTF-8'); ?></span>
+              <span class="font-semibold text-amber-100"><?php echo number_format($vehicleExpensesTotal, 0, '.', ' '); ?> ₽</span>
+            </div>
+            <?php if (!empty($activeVehicle['notes'])): ?>
+              <div class="text-xs text-white/70 border-t border-white/5 pt-2"><?php echo nl2br(htmlspecialchars($activeVehicle['notes'], ENT_QUOTES, 'UTF-8')); ?></div>
+            <?php endif; ?>
+          </div>
+
+          <div class="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-3">
+            <div class="flex items-center justify-between text-sm font-semibold">
+              <span><?php echo htmlspecialchars(t('carbook.card.wishlist'), ENT_QUOTES, 'UTF-8'); ?></span>
+              <span class="text-white/60 text-xs"><?php echo count($vehicleWishes); ?> <?php echo htmlspecialchars(t('carbook.stats.events'), ENT_QUOTES, 'UTF-8'); ?></span>
+            </div>
+            <div class="space-y-2 max-h-48 overflow-auto pr-1">
+              <?php foreach ($vehicleWishes as $wish): ?>
+                <div class="flex items-center justify-between rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm">
+                  <div class="flex items-center gap-2">
+                    <input type="checkbox" data-action="toggle-wish" data-id="<?php echo (int) $wish['id']; ?>" <?php echo $wish['is_done'] ? 'checked' : ''; ?>>
+                    <span class="<?php echo $wish['is_done'] ? 'line-through text-white/50' : 'text-white'; ?>"><?php echo htmlspecialchars($wish['title'], ENT_QUOTES, 'UTF-8'); ?></span>
+                  </div>
+                  <span class="text-xs text-white/50"><?php echo htmlspecialchars(substr($wish['created_at'], 0, 10), ENT_QUOTES, 'UTF-8'); ?></span>
+                </div>
+              <?php endforeach; ?>
+              <?php if (empty($vehicleWishes)): ?>
+                <div class="text-xs text-white/50"><?php echo htmlspecialchars(t('carbook.message.saved'), ENT_QUOTES, 'UTF-8'); ?></div>
+              <?php endif; ?>
+            </div>
+            <form id="carbook-wish" class="space-y-2" data-vehicle="<?php echo (int) $currentVehicleId; ?>">
+              <input type="hidden" name="vehicle_id" value="<?php echo (int) $currentVehicleId; ?>">
+              <input name="title" required class="w-full rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-sm" placeholder="<?php echo htmlspecialchars(t('carbook.form.wish.title'), ENT_QUOTES, 'UTF-8'); ?>">
+              <button class="nav-link w-full justify-center bg-gradient-to-r from-fuchsia-500/80 to-sky-500/80 px-3 py-2 text-xs uppercase tracking-[0.2em]" type="submit"><?php echo htmlspecialchars(t('carbook.action.add_wish'), ENT_QUOTES, 'UTF-8'); ?></button>
+            </form>
+          </div>
+
+          <div class="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-3">
+            <div class="flex items-center justify-between text-sm font-semibold">
+              <span><?php echo htmlspecialchars(t('carbook.card.expenses'), ENT_QUOTES, 'UTF-8'); ?></span>
+              <span class="text-amber-100 text-sm font-bold"><?php echo number_format($vehicleExpensesTotal, 0, '.', ' '); ?> ₽</span>
+            </div>
+            <div class="space-y-2 max-h-48 overflow-auto pr-1">
+              <?php foreach ($vehicleExpenses as $exp): ?>
+                <div class="flex items-center justify-between rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm">
+                  <div>
+                    <div class="font-semibold"><?php echo htmlspecialchars($exp['title'], ENT_QUOTES, 'UTF-8'); ?></div>
+                    <div class="text-xs text-white/60"><?php echo htmlspecialchars(substr($exp['created_at'], 0, 10), ENT_QUOTES, 'UTF-8'); ?></div>
+                  </div>
+                  <div class="text-amber-100 font-semibold"><?php echo number_format($exp['cost'], 0, '.', ' '); ?> ₽</div>
+                </div>
+              <?php endforeach; ?>
+              <?php if (empty($vehicleExpenses)): ?>
+                <div class="text-xs text-white/50"><?php echo htmlspecialchars(t('carbook.message.saved'), ENT_QUOTES, 'UTF-8'); ?></div>
+              <?php endif; ?>
+            </div>
+            <form id="carbook-expense" class="space-y-2" data-vehicle="<?php echo (int) $currentVehicleId; ?>">
+              <input type="hidden" name="vehicle_id" value="<?php echo (int) $currentVehicleId; ?>">
+              <input name="title" required class="w-full rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-sm" placeholder="<?php echo htmlspecialchars(t('carbook.form.expense.title'), ENT_QUOTES, 'UTF-8'); ?>">
+              <input type="number" step="0.01" name="cost" required class="w-full rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-sm" placeholder="<?php echo htmlspecialchars(t('carbook.form.expense.cost'), ENT_QUOTES, 'UTF-8'); ?>">
+              <button class="nav-link w-full justify-center bg-gradient-to-r from-amber-500/80 to-rose-500/80 px-3 py-2 text-xs uppercase tracking-[0.2em]" type="submit"><?php echo htmlspecialchars(t('carbook.action.add_expense'), ENT_QUOTES, 'UTF-8'); ?></button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+  <?php endif; ?>
 
   <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <div class="lg:col-span-2 space-y-4">
@@ -146,12 +288,56 @@ include __DIR__ . '/header.php';
             </select>
             <input type="number" name="mileage" class="w-full rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-sm" placeholder="<?php echo htmlspecialchars(t('carbook.form.event.mileage'), ENT_QUOTES, 'UTF-8'); ?>">
           </div>
+          <div class="grid grid-cols-1 gap-2">
+            <input type="number" step="0.01" name="cost" class="w-full rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-sm" placeholder="<?php echo htmlspecialchars(t('carbook.form.event.cost'), ENT_QUOTES, 'UTF-8'); ?>">
+          </div>
           <textarea name="note" class="w-full rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-sm" placeholder="<?php echo htmlspecialchars(t('carbook.form.event.note'), ENT_QUOTES, 'UTF-8'); ?>"></textarea>
           <button class="nav-link bg-gradient-to-r from-cyan-500/80 to-blue-500/80 px-4 py-2 text-xs uppercase tracking-[0.2em] shadow-lg shadow-cyan-500/20" type="submit"><?php echo htmlspecialchars(t('carbook.form.submit'), ENT_QUOTES, 'UTF-8'); ?></button>
         </form>
       </div>
     </div>
   </section>
+
+  <?php if ($activeVehicle): ?>
+    <section class="rounded-2xl border border-white/10 bg-white/5 shadow-lg shadow-cyan-500/10">
+      <div class="border-b border-white/5 px-6 py-4 flex items-center justify-between">
+        <div>
+          <div class="text-xs uppercase tracking-[0.2em] text-white/60"><?php echo htmlspecialchars(t('carbook.section.history'), ENT_QUOTES, 'UTF-8'); ?></div>
+          <div class="font-semibold"><?php echo htmlspecialchars(t('carbook.card.live_log'), ENT_QUOTES, 'UTF-8'); ?> · <?php echo htmlspecialchars($activeVehicle['title'], ENT_QUOTES, 'UTF-8'); ?></div>
+        </div>
+        <div class="text-sm text-white/70"><?php echo htmlspecialchars(t('carbook.card.expenses'), ENT_QUOTES, 'UTF-8'); ?>: <span class="text-amber-100 font-semibold"><?php echo number_format($vehicleExpensesTotal, 0, '.', ' '); ?> ₽</span></div>
+      </div>
+      <div class="p-6 overflow-auto">
+        <table class="w-full text-sm text-left text-white/90">
+          <thead class="text-xs uppercase text-white/60">
+            <tr>
+              <th class="px-2 py-1"><?php echo htmlspecialchars(t('carbook.form.event.type'), ENT_QUOTES, 'UTF-8'); ?></th>
+              <th class="px-2 py-1"><?php echo htmlspecialchars(t('carbook.form.event.mileage'), ENT_QUOTES, 'UTF-8'); ?></th>
+              <th class="px-2 py-1"><?php echo htmlspecialchars(t('carbook.form.event.cost'), ENT_QUOTES, 'UTF-8'); ?></th>
+              <th class="px-2 py-1"><?php echo htmlspecialchars(t('carbook.form.event.note'), ENT_QUOTES, 'UTF-8'); ?></th>
+              <th class="px-2 py-1 text-right">Дата</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-white/5">
+            <?php foreach ($vehicleEvents as $event): ?>
+              <tr>
+                <td class="px-2 py-2 font-semibold"><?php echo htmlspecialchars($event['event_type'], ENT_QUOTES, 'UTF-8'); ?></td>
+                <td class="px-2 py-2 text-white/70"><?php echo $event['mileage'] ? (int) $event['mileage'] . ' км' : '—'; ?></td>
+                <td class="px-2 py-2 text-amber-100"><?php echo $event['cost'] !== null ? number_format($event['cost'], 0, '.', ' ') . ' ₽' : '—'; ?></td>
+                <td class="px-2 py-2 text-white/70"><?php echo htmlspecialchars($event['note'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
+                <td class="px-2 py-2 text-right text-white/60"><?php echo htmlspecialchars(substr($event['created_at'], 0, 16), ENT_QUOTES, 'UTF-8'); ?></td>
+              </tr>
+            <?php endforeach; ?>
+            <?php if (empty($vehicleEvents)): ?>
+              <tr>
+                <td colspan="5" class="px-2 py-4 text-center text-white/50">—</td>
+              </tr>
+            <?php endif; ?>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  <?php endif; ?>
 
   <section class="rounded-2xl border border-white/10 bg-white/5 shadow-lg shadow-cyan-500/10">
     <div class="border-b border-white/5 px-6 py-4 flex items-center justify-between">
@@ -165,7 +351,17 @@ include __DIR__ . '/header.php';
         <div class="flex items-start justify-between rounded-xl border border-white/10 bg-black/20 p-3">
           <div>
             <div class="font-semibold"><?php echo htmlspecialchars($event['title'], ENT_QUOTES, 'UTF-8'); ?> (<?php echo htmlspecialchars($event['license_plate'], ENT_QUOTES, 'UTF-8'); ?>)</div>
-            <div class="text-white/70 text-xs"><?php echo htmlspecialchars($event['event_type'], ENT_QUOTES, 'UTF-8'); ?> · <?php echo htmlspecialchars($event['note'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
+            <div class="text-white/70 text-xs flex flex-col gap-0.5">
+              <span><?php echo htmlspecialchars($event['event_type'], ENT_QUOTES, 'UTF-8'); ?> · <?php echo htmlspecialchars($event['note'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span>
+              <span>
+                <?php if ($event['mileage']): ?>
+                  <span class="text-white/60"><?php echo (int) $event['mileage']; ?> км</span>
+                <?php endif; ?>
+                <?php if ($event['cost'] !== null): ?>
+                  <span class="text-amber-100 font-semibold"> · <?php echo number_format($event['cost'], 0, '.', ' '); ?> ₽</span>
+                <?php endif; ?>
+              </span>
+            </div>
           </div>
           <div class="text-right text-xs text-white/70">
             <div><?php echo htmlspecialchars($event['created_at'], ENT_QUOTES, 'UTF-8'); ?></div>
@@ -255,6 +451,49 @@ include __DIR__ . '/header.php';
       }
     });
   }
+
+  const expenseForm = document.getElementById('carbook-expense');
+  if (expenseForm) {
+    expenseForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(expenseForm).entries());
+      data.action = 'add_expense';
+      try {
+        await sendCarBook('car_book/api.php', data);
+        showToast('<?php echo addslashes(t('carbook.message.saved')); ?>');
+        location.reload();
+      } catch (err) {
+        showToast('<?php echo addslashes(t('carbook.message.error')); ?>: ' + err.message, false);
+      }
+    });
+  }
+
+  const wishForm = document.getElementById('carbook-wish');
+  if (wishForm) {
+    wishForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(wishForm).entries());
+      data.action = 'add_wish';
+      try {
+        await sendCarBook('car_book/api.php', data);
+        showToast('<?php echo addslashes(t('carbook.message.saved')); ?>');
+        location.reload();
+      } catch (err) {
+        showToast('<?php echo addslashes(t('carbook.message.error')); ?>: ' + err.message, false);
+      }
+    });
+  }
+
+  document.querySelectorAll('[data-action="toggle-wish"]').forEach((checkbox) => {
+    checkbox.addEventListener('change', async () => {
+      try {
+        await sendCarBook('car_book/api.php', { action: 'toggle_wish', id: checkbox.dataset.id });
+        showToast('<?php echo addslashes(t('carbook.message.saved')); ?>');
+      } catch (err) {
+        showToast('<?php echo addslashes(t('carbook.message.error')); ?>: ' + err.message, false);
+      }
+    });
+  });
 </script>
 
 <?php include __DIR__ . '/footer.php'; ?>
