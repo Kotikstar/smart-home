@@ -306,7 +306,7 @@ switch ($resource) {
         }
 
         if ($action === 'list') {
-            $stmt = $pdo->query('SELECT u.id, u.username, COALESCE(up.is_admin, 0) AS is_admin, COALESCE(up.can_dashboard, 0) AS can_dashboard, COALESCE(up.can_fuel, 0) AS can_fuel, COALESCE(up.can_cards, 0) AS can_cards, COALESCE(up.can_dispense, 0) AS can_dispense, COALESCE(up.can_logs, 0) AS can_logs, COALESCE(up.can_diesel, 0) AS can_diesel, COALESCE(up.can_passes, 0) AS can_passes, COALESCE(up.can_service, 0) AS can_service FROM users u LEFT JOIN user_permissions up ON up.user_id = u.id ORDER BY u.id ASC');
+            $stmt = $pdo->query('SELECT u.id, u.username, COALESCE(up.is_admin, 0) AS is_admin, COALESCE(up.can_dashboard, 0) AS can_dashboard, COALESCE(up.can_fuel, 0) AS can_fuel, COALESCE(up.can_cards, 0) AS can_cards, COALESCE(up.can_dispense, 0) AS can_dispense, COALESCE(up.can_logs, 0) AS can_logs, COALESCE(up.can_diesel, 0) AS can_diesel, COALESCE(up.can_passes, 0) AS can_passes, COALESCE(up.can_service, 0) AS can_service, COALESCE(up.can_carbook, 0) AS can_carbook FROM users u LEFT JOIN user_permissions up ON up.user_id = u.id ORDER BY u.id ASC');
             $users = array_map(function ($u) {
                 return [
                     'id' => (int) $u['id'],
@@ -316,14 +316,15 @@ switch ($resource) {
                         'dashboard' => (bool) $u['can_dashboard'],
                         'fuel' => (bool) $u['can_fuel'],
                         'cards' => (bool) $u['can_cards'],
-                        'dispense' => (bool) $u['can_dispense'],
-                        'logs' => (bool) $u['can_logs'],
-                        'diesel' => (bool) $u['can_diesel'],
-                        'passes' => (bool) $u['can_passes'],
-                        'service' => (bool) $u['can_service'],
-                    ],
-                ];
-            }, $stmt->fetchAll());
+                    'dispense' => (bool) $u['can_dispense'],
+                    'logs' => (bool) $u['can_logs'],
+                    'diesel' => (bool) $u['can_diesel'],
+                    'passes' => (bool) $u['can_passes'],
+                    'service' => (bool) $u['can_service'],
+                    'carbook' => (bool) $u['can_carbook'],
+                ],
+            ];
+        }, $stmt->fetchAll());
 
             jsonResponse($users);
         } elseif ($action === 'update_permissions') {
