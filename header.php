@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/i18n.php';
 ensureSession();
 $allowAnonymous = defined('ALLOW_ANON') && ALLOW_ANON === true;
 requireAuthPage($allowAnonymous);
@@ -7,13 +8,14 @@ $requiredPermission = defined('REQUIRED_PERMISSION') ? REQUIRED_PERMISSION : nul
 if ($requiredPermission) {
   requirePermissionPage($requiredPermission);
 }
+$currentLang = currentLang();
 ?>
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="<?php echo htmlspecialchars($currentLang, ENT_QUOTES, 'UTF-8'); ?>">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Смарт-дом: топливо и пропуска</title>
+  <title><?php echo htmlspecialchars(t('app.title'), ENT_QUOTES, 'UTF-8'); ?></title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -51,11 +53,9 @@ if ($requiredPermission) {
                   radial-gradient(circle at 80% 30%, rgba(59, 130, 246, 0.12), transparent 24%),
                   radial-gradient(circle at 26% 78%, rgba(16, 185, 129, 0.1), transparent 30%);
       mix-blend-mode: screen;
-      filter: blur(40px);
-      opacity: 0.55;
+      opacity: 0.35;
     }
     .glass-nav {
-      backdrop-filter: blur(14px);
       background: rgba(17, 24, 39, 0.75);
       border: 1px solid rgba(255, 255, 255, 0.08);
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
@@ -114,7 +114,6 @@ if ($requiredPermission) {
       background: radial-gradient(circle at 30% 30%, rgba(59,130,246,0.28), transparent 45%),
                   radial-gradient(circle at 70% 70%, rgba(16,185,129,0.28), transparent 46%);
       opacity: 0.35;
-      filter: blur(14px);
     }
     .neon-border::after {
       content: '';
@@ -122,7 +121,6 @@ if ($requiredPermission) {
       inset: 1px;
       border-radius: 14px;
       background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
-      backdrop-filter: blur(12px);
       z-index: 1;
     }
     .modal-enter {
@@ -140,7 +138,6 @@ if ($requiredPermission) {
       border-radius: 32px;
       background: radial-gradient(circle at 30% 30%, rgba(34, 211, 238, 0.3), transparent 40%),
                   radial-gradient(circle at 70% 70%, rgba(99, 102, 241, 0.25), transparent 42%);
-      filter: blur(32px);
       opacity: 0.45;
     }
   </style>
@@ -149,23 +146,95 @@ if ($requiredPermission) {
   <div class="cyber-grid"></div>
   <div class="floating-particles"></div>
   <nav class="glass-nav p-4 sticky top-0 z-30">
-    <div class="max-w-7xl mx-auto flex flex-wrap items-center gap-3 text-sm">
-      <a href="all.php" class="nav-link font-semibold">Главная</a>
-      <a href="dashboard.php" class="nav-link requires-auth" data-requires-auth="true">Панель</a>
-      <a href="fuel.php" class="nav-link requires-auth" data-requires-auth="true">Топливо</a>
-      <a href="cards.php" class="nav-link requires-auth" data-requires-auth="true">Карты</a>
-      <a href="dispense.php" class="nav-link requires-auth" data-requires-auth="true">Выдача</a>
-      <a href="logs.php" class="nav-link requires-auth" data-requires-auth="true">Логи</a>
-      <a href="diesel_price.php" class="nav-link requires-auth" data-requires-auth="true">Цены на дизель</a>
-      <a href="passes.php" class="nav-link requires-auth" data-requires-auth="true">Пропуска</a>
-      <a href="search.php" class="nav-link requires-auth" data-requires-auth="true">Поиск пропуска</a>
-      <div class="ml-auto flex items-center gap-2" id="auth-cta">
-        <div id="user-pill" class="hidden items-center gap-2 rounded-full border border-emerald-300/40 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-100 shadow-lg shadow-emerald-500/10 backdrop-blur">
-          <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span id="user-pill-name"><?php echo htmlspecialchars(currentUsername() ?? '', ENT_QUOTES, 'UTF-8'); ?></span>
+    <div class="max-w-7xl mx-auto text-sm">
+      <div class="flex items-center justify-between gap-3 md:hidden">
+        <div class="flex items-center gap-2">
+          <button id="menu-toggle" class="nav-link px-3 py-2 border border-white/10 bg-white/5" aria-expanded="false" aria-controls="nav-content">
+            <span class="sr-only">Menu</span>
+            <span class="block h-[2px] w-5 bg-white mb-[5px]"></span>
+            <span class="block h-[2px] w-5 bg-white mb-[5px]"></span>
+            <span class="block h-[2px] w-5 bg-white"></span>
+          </button>
+          <a href="all.php" class="font-semibold tracking-wide"><?php echo htmlspecialchars(t('app.title'), ENT_QUOTES, 'UTF-8'); ?></a>
         </div>
-        <button id="open-login" class="nav-link bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.2em] border border-white/10 shadow-lg shadow-cyan-500/10 <?php echo currentUserId() ? 'hidden' : ''; ?>">Вход</button>
-        <button id="logout-btn" class="nav-link bg-gradient-to-r from-emerald-500/80 to-cyan-500/80 px-4 py-2 text-xs uppercase tracking-[0.2em] shadow-lg shadow-emerald-500/20 <?php echo currentUserId() ? '' : 'hidden'; ?>">Выход</button>
+        <div class="flex items-center gap-2 text-xs text-white/70">
+          <span class="hidden sm:block"><?php echo htmlspecialchars(t('nav.language'), ENT_QUOTES, 'UTF-8'); ?></span>
+          <form method="post" action="set_language.php" class="flex items-center gap-2 bg-white/5 px-3 py-1 rounded-full border border-white/10">
+            <select name="lang" id="lang-mobile" class="bg-transparent text-white text-sm focus:outline-none" onchange="this.form.submit()">
+              <?php foreach (availableLanguages() as $lang): ?>
+                <option value="<?php echo htmlspecialchars($lang, ENT_QUOTES, 'UTF-8'); ?>" <?php echo $lang === $currentLang ? 'selected' : ''; ?>><?php echo htmlspecialchars(t('lang.' . $lang), ENT_QUOTES, 'UTF-8'); ?></option>
+              <?php endforeach; ?>
+            </select>
+          </form>
+        </div>
+      </div>
+      <div id="nav-content" class="hidden md:flex md:flex-wrap md:items-center gap-3 mt-3 md:mt-0">
+        <div class="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2">
+          <a href="all.php" class="nav-link font-semibold"><?php echo htmlspecialchars(t('nav.home'), ENT_QUOTES, 'UTF-8'); ?></a>
+          <a href="dashboard.php" class="nav-link requires-auth" data-requires-auth="true"><?php echo htmlspecialchars(t('nav.dashboard'), ENT_QUOTES, 'UTF-8'); ?></a>
+          <a href="fuel.php" class="nav-link requires-auth" data-requires-auth="true"><?php echo htmlspecialchars(t('nav.fuel'), ENT_QUOTES, 'UTF-8'); ?></a>
+          <a href="cards.php" class="nav-link requires-auth" data-requires-auth="true"><?php echo htmlspecialchars(t('nav.cards'), ENT_QUOTES, 'UTF-8'); ?></a>
+          <a href="dispense.php" class="nav-link requires-auth" data-requires-auth="true"><?php echo htmlspecialchars(t('nav.dispense'), ENT_QUOTES, 'UTF-8'); ?></a>
+          <a href="logs.php" class="nav-link requires-auth" data-requires-auth="true"><?php echo htmlspecialchars(t('nav.logs'), ENT_QUOTES, 'UTF-8'); ?></a>
+          <a href="diesel_price.php" class="nav-link requires-auth" data-requires-auth="true"><?php echo htmlspecialchars(t('nav.diesel'), ENT_QUOTES, 'UTF-8'); ?></a>
+          <a href="passes.php" class="nav-link requires-auth" data-requires-auth="true"><?php echo htmlspecialchars(t('nav.passes'), ENT_QUOTES, 'UTF-8'); ?></a>
+          <a href="search.php" class="nav-link requires-auth" data-requires-auth="true"><?php echo htmlspecialchars(t('nav.search'), ENT_QUOTES, 'UTF-8'); ?></a>
+          <a href="car_book.php" class="nav-link requires-auth" data-requires-auth="true"><?php echo htmlspecialchars(t('nav.carbook'), ENT_QUOTES, 'UTF-8'); ?></a>
+        </div>
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 w-full sm:w-auto sm:ml-auto">
+          <form method="post" action="set_language.php" class="flex items-center gap-2 bg-white/5 px-3 py-1 rounded-full border border-white/10 text-xs w-full sm:w-auto justify-between sm:justify-start">
+            <label for="lang" class="text-white/70"> <?php echo htmlspecialchars(t('nav.language'), ENT_QUOTES, 'UTF-8'); ?> </label>
+            <select name="lang" id="lang" class="bg-transparent text-white text-sm focus:outline-none" onchange="this.form.submit()">
+              <?php foreach (availableLanguages() as $lang): ?>
+                <option value="<?php echo htmlspecialchars($lang, ENT_QUOTES, 'UTF-8'); ?>" <?php echo $lang === $currentLang ? 'selected' : ''; ?>><?php echo htmlspecialchars(t('lang.' . $lang), ENT_QUOTES, 'UTF-8'); ?></option>
+              <?php endforeach; ?>
+            </select>
+          </form>
+          <div class="flex flex-col sm:flex-row sm:items-center gap-2" id="auth-cta">
+            <div id="user-pill" class="hidden items-center gap-2 rounded-full border border-emerald-300/40 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-100 shadow-lg shadow-emerald-500/10">
+              <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span id="user-pill-name"><?php echo htmlspecialchars(currentUsername() ?? '', ENT_QUOTES, 'UTF-8'); ?></span>
+            </div>
+            <button id="open-login" class="nav-link bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.2em] border border-white/10 shadow-lg shadow-cyan-500/10 <?php echo currentUserId() ? 'hidden' : ''; ?>"><?php echo htmlspecialchars(t('nav.login'), ENT_QUOTES, 'UTF-8'); ?></button>
+            <button id="logout-btn" class="nav-link bg-gradient-to-r from-emerald-500/80 to-cyan-500/80 px-4 py-2 text-xs uppercase tracking-[0.2em] shadow-lg shadow-emerald-500/20 <?php echo currentUserId() ? '' : 'hidden'; ?>"><?php echo htmlspecialchars(t('nav.logout'), ENT_QUOTES, 'UTF-8'); ?></button>
+          </div>
+        </div>
       </div>
     </div>
   </nav>
+  <script>
+    const navContent = document.getElementById('nav-content');
+    const toggleBtn = document.getElementById('menu-toggle');
+
+    const closeMenu = () => {
+      if (navContent && window.innerWidth < 768) {
+        navContent.classList.add('hidden');
+        toggleBtn?.setAttribute('aria-expanded', 'false');
+      }
+    };
+
+    toggleBtn?.addEventListener('click', () => {
+      if (!navContent) return;
+      const isHidden = navContent.classList.contains('hidden');
+      if (isHidden) {
+        navContent.classList.remove('hidden');
+      } else {
+        navContent.classList.add('hidden');
+      }
+      toggleBtn.setAttribute('aria-expanded', String(!isHidden));
+    });
+
+    window.addEventListener('resize', () => {
+      if (!navContent) return;
+      if (window.innerWidth >= 768) {
+        navContent.classList.remove('hidden');
+        toggleBtn?.setAttribute('aria-expanded', 'true');
+      } else {
+        closeMenu();
+      }
+    });
+
+    navContent?.querySelectorAll('a.nav-link').forEach((link) => {
+      link.addEventListener('click', closeMenu);
+    });
+  </script>
