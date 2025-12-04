@@ -39,24 +39,16 @@ requireAuthPage($allowAnonymous);
       mask-image: radial-gradient(circle at center, black 0%, transparent 75%);
       z-index: 0;
     }
-    .floating-particles::before,
-    .floating-particles::after {
-      content: '';
+    .floating-particles {
       position: fixed;
       inset: 0;
       pointer-events: none;
-      background: radial-gradient(circle at 10% 20%, rgba(34, 211, 238, 0.14), transparent 20%),
-                  radial-gradient(circle at 80% 40%, rgba(59, 130, 246, 0.18), transparent 22%),
-                  radial-gradient(circle at 30% 75%, rgba(16, 185, 129, 0.12), transparent 24%);
+      background: radial-gradient(circle at 12% 20%, rgba(34, 211, 238, 0.12), transparent 26%),
+                  radial-gradient(circle at 80% 30%, rgba(59, 130, 246, 0.12), transparent 24%),
+                  radial-gradient(circle at 26% 78%, rgba(16, 185, 129, 0.1), transparent 30%);
       mix-blend-mode: screen;
-      filter: blur(60px);
-      animation: drift 22s ease-in-out infinite alternate;
-      opacity: 0.7;
-    }
-    .floating-particles::after {
-      animation-direction: alternate-reverse;
-      animation-duration: 28s;
-      opacity: 0.6;
+      filter: blur(40px);
+      opacity: 0.55;
     }
     .glass-nav {
       backdrop-filter: blur(14px);
@@ -95,10 +87,9 @@ requireAuthPage($allowAnonymous);
     .glow-cta::before {
       content: '';
       position: absolute;
-      inset: -120%;
-      background: conic-gradient(from 90deg at 50% 50%, #0ea5e9, #22d3ee, #10b981, #6366f1, #0ea5e9);
-      animation: rotate 12s linear infinite;
-      opacity: 0.35;
+      inset: -40%;
+      background: linear-gradient(135deg, rgba(14,165,233,0.35), rgba(34,211,238,0.25), rgba(16,185,129,0.3));
+      opacity: 0.28;
       z-index: 0;
     }
     .glow-cta span {
@@ -115,12 +106,11 @@ requireAuthPage($allowAnonymous);
     .neon-border::before {
       content: '';
       position: absolute;
-      inset: -120%;
-      background: conic-gradient(from 0deg, rgba(59,130,246,0.4), rgba(16,185,129,0.35), rgba(14,165,233,0.45), rgba(99,102,241,0.35), rgba(59,130,246,0.4));
-      animation: rotate 18s linear infinite;
-      opacity: 0.4;
-      filter: blur(18px);
-      transform-origin: center;
+      inset: -40%;
+      background: radial-gradient(circle at 30% 30%, rgba(59,130,246,0.28), transparent 45%),
+                  radial-gradient(circle at 70% 70%, rgba(16,185,129,0.28), transparent 46%);
+      opacity: 0.35;
+      filter: blur(14px);
     }
     .neon-border::after {
       content: '';
@@ -148,19 +138,6 @@ requireAuthPage($allowAnonymous);
                   radial-gradient(circle at 70% 70%, rgba(99, 102, 241, 0.25), transparent 42%);
       filter: blur(32px);
       opacity: 0.45;
-      animation: pulse 6s ease-in-out infinite alternate;
-    }
-    @keyframes rotate {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-    @keyframes drift {
-      0% { transform: translate3d(-10px, -10px, 0) scale(1); }
-      100% { transform: translate3d(12px, 12px, 0) scale(1.05); }
-    }
-    @keyframes pulse {
-      0% { opacity: 0.35; transform: scale(0.98); }
-      100% { opacity: 0.75; transform: scale(1.04); }
     }
   </style>
 </head>
