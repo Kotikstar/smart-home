@@ -53,8 +53,7 @@ $currentLang = currentLang();
                   radial-gradient(circle at 80% 30%, rgba(59, 130, 246, 0.12), transparent 24%),
                   radial-gradient(circle at 26% 78%, rgba(16, 185, 129, 0.1), transparent 30%);
       mix-blend-mode: screen;
-      filter: blur(40px);
-      opacity: 0.55;
+      opacity: 0.35;
     }
     .glass-nav {
       backdrop-filter: blur(14px);
