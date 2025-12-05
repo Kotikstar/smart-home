@@ -30,6 +30,11 @@ function ensurePermissionColumns(PDO $pdo): void
         }
     }
 
+    if (!in_array('is_admin', $existing, true)) {
+        $pdo->exec('ALTER TABLE user_permissions ADD COLUMN is_admin TINYINT(1) DEFAULT 0');
+        $existing[] = 'is_admin';
+    }
+
     foreach (PERMISSION_KEYS as $key) {
         $column = 'can_' . $key;
         if (!in_array($column, $existing, true)) {
