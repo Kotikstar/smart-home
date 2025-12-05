@@ -289,6 +289,7 @@ if ($intent && isset($TARGET_URLS[$intent])) {
       diesel: 'Цены',
       passes: 'Пропуска',
       service: 'Сервис',
+      carbook: 'Car Book',
     };
 
     const openModal = () => {
@@ -446,6 +447,7 @@ if ($intent && isset($TARGET_URLS[$intent])) {
         const input = card?.querySelector(`input[data-permission="${key}"]`);
         payloadPerms[key] = input?.checked || false;
       });
+      console.debug('[admin] Saving permissions', { userId, payloadPerms });
       btn.setAttribute('disabled', 'disabled');
       if (adminStatus) adminStatus.textContent = 'Сохраняем права...';
       try {
@@ -456,10 +458,20 @@ if ($intent && isset($TARGET_URLS[$intent])) {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Не удалось сохранить права');
-        if (adminStatus) adminStatus.textContent = 'Права обновлены.';
+        console.debug('[admin] Saved permissions response', data);
+        const savedPerms = data?.saved?.permissions || {};
+        const savedAdmin = data?.saved?.is_admin ? 'админ' : 'не админ';
+        if (adminStatus) adminStatus.textContent = `Права обновлены (${savedAdmin}).`;
         if (userId === <?php echo currentUserId() ?: 0; ?>) {
           await fetchSession();
         }
+        await loadUsers();
+        const refreshedCard = usersTable?.querySelector(`[data-user-id="${userId}"]`);
+        if (refreshedCard) {
+          refreshedCard.classList.add('ring-2', 'ring-amber-300/60');
+          setTimeout(() => refreshedCard.classList.remove('ring-2', 'ring-amber-300/60'), 1200);
+        }
+        console.debug('[admin] Applied permissions snapshot', { userId, savedAdmin, savedPerms });
       } catch (err) {
         if (adminStatus) adminStatus.textContent = err.message || 'Ошибка сохранения прав';
       } finally {
