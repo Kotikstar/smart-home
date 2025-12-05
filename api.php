@@ -339,21 +339,33 @@ switch ($resource) {
                 jsonResponse(['error' => 'Нельзя снять права администратора с собственного аккаунта'], 400);
             }
 
-            $values = [$userId, $isAdminFlag];
-            foreach (PERMISSION_KEYS as $key) {
-                $values[] = !empty($payloadPermissions[$key]) ? 1 : 0;
-            }
-
-            $placeholders = implode(', ', array_fill(0, count(PERMISSION_KEYS) + 2, '?'));
-            $updates = 'is_admin = VALUES(is_admin), ' . implode(', ', array_map(fn($k) => 'can_' . $k . ' = VALUES(can_' . $k . ')', PERMISSION_KEYS));
-
-            $sql = 'INSERT INTO user_permissions (user_id, is_admin, ' . implode(', ', array_map(fn($k) => 'can_' . $k, PERMISSION_KEYS)) . ") VALUES ($placeholders) ON DUPLICATE KEY UPDATE $updates";
             try {
                 error_log('[users:update_permissions] user_id=' . $userId . ' payload=' . json_encode($payloadPermissions, JSON_UNESCAPED_UNICODE));
-                $stmt = $pdo->prepare($sql);
-                $stmt->execute($values);
+                $values = [$isAdminFlag];
+                foreach (PERMISSION_KEYS as $key) {
+                    $values[] = !empty($payloadPermissions[$key]) ? 1 : 0;
+                }
+
+                $existingStmt = $pdo->prepare('SELECT id FROM user_permissions WHERE user_id = ? LIMIT 1');
+                $existingStmt->execute([$userId]);
+                $existing = $existingStmt->fetchColumn();
+
+                if ($existing) {
+                    $setParts = array_map(fn($k) => 'can_' . $k . ' = ?', PERMISSION_KEYS);
+                    $sql = 'UPDATE user_permissions SET is_admin = ?, ' . implode(', ', $setParts) . ' WHERE user_id = ?';
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->execute([...$values, $userId]);
+                } else {
+                    $columns = implode(', ', array_map(fn($k) => 'can_' . $k, PERMISSION_KEYS));
+                    $placeholders = implode(', ', array_fill(0, count(PERMISSION_KEYS) + 1, '?'));
+                    $sql = 'INSERT INTO user_permissions (user_id, is_admin, ' . $columns . ") VALUES (?, $placeholders)";
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->execute([$userId, ...$values]);
+                }
+
                 $storedRow = ensurePermissionsRow($pdo, $userId);
                 $storedPerms = permissionsRowToArray($storedRow);
+                error_log('[users:update_permissions:stored] ' . json_encode($storedRow, JSON_UNESCAPED_UNICODE));
 
                 // обновить сессию, если меняем права текущему пользователю
                 if ($userId === currentUserId()) {

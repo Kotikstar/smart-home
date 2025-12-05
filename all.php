@@ -460,8 +460,23 @@ if ($intent && isset($TARGET_URLS[$intent])) {
         if (!res.ok) throw new Error(data.error || 'Не удалось сохранить права');
         console.debug('[admin] Saved permissions response', data);
         const savedPerms = data?.saved?.permissions || {};
-        const savedAdmin = data?.saved?.is_admin ? 'админ' : 'не админ';
-        if (adminStatus) adminStatus.textContent = `Права обновлены (${savedAdmin}).`;
+        const savedAdminFlag = !!data?.saved?.is_admin;
+        const savedAdminText = savedAdminFlag ? 'админ' : 'не админ';
+
+        const mismatches = [];
+        if ((payloadPerms.is_admin || false) !== savedAdminFlag) {
+          mismatches.push(`Админ: ${savedAdminText}`);
+        }
+        Object.keys(PERMISSION_LABELS).forEach((key) => {
+          if ((payloadPerms[key] || false) !== (savedPerms[key] || false)) {
+            mismatches.push(`${PERMISSION_LABELS[key]}: ${savedPerms[key] ? 'включено' : 'выключено'}`);
+          }
+        });
+
+        const statusMsg = mismatches.length
+          ? `Сохранено, но сервер вернул отличия → ${mismatches.join(', ')}`
+          : `Права обновлены (${savedAdminText}).`;
+        if (adminStatus) adminStatus.textContent = statusMsg;
         if (userId === <?php echo currentUserId() ?: 0; ?>) {
           await fetchSession();
         }
@@ -471,7 +486,10 @@ if ($intent && isset($TARGET_URLS[$intent])) {
           refreshedCard.classList.add('ring-2', 'ring-amber-300/60');
           setTimeout(() => refreshedCard.classList.remove('ring-2', 'ring-amber-300/60'), 1200);
         }
-        console.debug('[admin] Applied permissions snapshot', { userId, savedAdmin, savedPerms });
+        console.debug('[admin] Applied permissions snapshot', { userId, savedAdmin: savedAdminText, savedPerms, mismatches });
+        if (mismatches.length) {
+          console.warn('[admin] Saved permissions differ from requested payload', { mismatches, payloadPerms, savedPerms, savedAdmin: savedAdminText });
+        }
       } catch (err) {
         if (adminStatus) adminStatus.textContent = err.message || 'Ошибка сохранения прав';
       } finally {
