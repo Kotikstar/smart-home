@@ -289,6 +289,7 @@ if ($intent && isset($TARGET_URLS[$intent])) {
       diesel: 'Цены',
       passes: 'Пропуска',
       service: 'Сервис',
+      carbook: 'Car Book',
     };
 
     const openModal = () => {
@@ -446,6 +447,7 @@ if ($intent && isset($TARGET_URLS[$intent])) {
         const input = card?.querySelector(`input[data-permission="${key}"]`);
         payloadPerms[key] = input?.checked || false;
       });
+      console.debug('[admin] Saving permissions', { userId, payloadPerms });
       btn.setAttribute('disabled', 'disabled');
       if (adminStatus) adminStatus.textContent = 'Сохраняем права...';
       try {
@@ -456,9 +458,37 @@ if ($intent && isset($TARGET_URLS[$intent])) {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Не удалось сохранить права');
-        if (adminStatus) adminStatus.textContent = 'Права обновлены.';
+        console.debug('[admin] Saved permissions response', data);
+        const savedPerms = data?.saved?.permissions || {};
+        const savedAdminFlag = !!data?.saved?.is_admin;
+        const savedAdminText = savedAdminFlag ? 'админ' : 'не админ';
+
+        const mismatches = [];
+        if ((payloadPerms.is_admin || false) !== savedAdminFlag) {
+          mismatches.push(`Админ: ${savedAdminText}`);
+        }
+        Object.keys(PERMISSION_LABELS).forEach((key) => {
+          if ((payloadPerms[key] || false) !== (savedPerms[key] || false)) {
+            mismatches.push(`${PERMISSION_LABELS[key]}: ${savedPerms[key] ? 'включено' : 'выключено'}`);
+          }
+        });
+
+        const statusMsg = mismatches.length
+          ? `Сохранено, но сервер вернул отличия → ${mismatches.join(', ')}`
+          : `Права обновлены (${savedAdminText}).`;
+        if (adminStatus) adminStatus.textContent = statusMsg;
         if (userId === <?php echo currentUserId() ?: 0; ?>) {
           await fetchSession();
+        }
+        await loadUsers();
+        const refreshedCard = usersTable?.querySelector(`[data-user-id="${userId}"]`);
+        if (refreshedCard) {
+          refreshedCard.classList.add('ring-2', 'ring-amber-300/60');
+          setTimeout(() => refreshedCard.classList.remove('ring-2', 'ring-amber-300/60'), 1200);
+        }
+        console.debug('[admin] Applied permissions snapshot', { userId, savedAdmin: savedAdminText, savedPerms, mismatches });
+        if (mismatches.length) {
+          console.warn('[admin] Saved permissions differ from requested payload', { mismatches, payloadPerms, savedPerms, savedAdmin: savedAdminText });
         }
       } catch (err) {
         if (adminStatus) adminStatus.textContent = err.message || 'Ошибка сохранения прав';
