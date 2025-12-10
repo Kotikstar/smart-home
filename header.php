@@ -172,14 +172,15 @@ $currentLang = currentLang();
         <div class="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2">
           <a href="all.php" class="nav-link font-semibold"><?php echo htmlspecialchars(t('nav.home'), ENT_QUOTES, 'UTF-8'); ?></a>
           <a href="dashboard.php" class="nav-link requires-auth" data-requires-auth="true"><?php echo htmlspecialchars(t('nav.dashboard'), ENT_QUOTES, 'UTF-8'); ?></a>
-          <a href="fuel.php" class="nav-link requires-auth" data-requires-auth="true"><?php echo htmlspecialchars(t('nav.fuel'), ENT_QUOTES, 'UTF-8'); ?></a>
           <a href="cards.php" class="nav-link requires-auth" data-requires-auth="true"><?php echo htmlspecialchars(t('nav.cards'), ENT_QUOTES, 'UTF-8'); ?></a>
-          <a href="dispense.php" class="nav-link requires-auth" data-requires-auth="true"><?php echo htmlspecialchars(t('nav.dispense'), ENT_QUOTES, 'UTF-8'); ?></a>
           <a href="logs.php" class="nav-link requires-auth" data-requires-auth="true"><?php echo htmlspecialchars(t('nav.logs'), ENT_QUOTES, 'UTF-8'); ?></a>
           <a href="diesel_price.php" class="nav-link requires-auth" data-requires-auth="true"><?php echo htmlspecialchars(t('nav.diesel'), ENT_QUOTES, 'UTF-8'); ?></a>
           <a href="passes.php" class="nav-link requires-auth" data-requires-auth="true"><?php echo htmlspecialchars(t('nav.passes'), ENT_QUOTES, 'UTF-8'); ?></a>
           <a href="search.php" class="nav-link requires-auth" data-requires-auth="true"><?php echo htmlspecialchars(t('nav.search'), ENT_QUOTES, 'UTF-8'); ?></a>
           <a href="car_book.php" class="nav-link requires-auth" data-requires-auth="true"><?php echo htmlspecialchars(t('nav.carbook'), ENT_QUOTES, 'UTF-8'); ?></a>
+          <?php if (isAdmin()): ?>
+            <a href="admin.php" class="nav-link requires-auth" data-requires-auth="true">Админ</a>
+          <?php endif; ?>
         </div>
         <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 w-full sm:w-auto sm:ml-auto">
           <form method="post" action="set_language.php" class="flex items-center gap-2 bg-white/5 px-3 py-1 rounded-full border border-white/10 text-xs w-full sm:w-auto justify-between sm:justify-start">
