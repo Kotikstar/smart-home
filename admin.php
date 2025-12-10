@@ -320,7 +320,10 @@ include 'header.php';
           body: JSON.stringify({ user_id: active.id, permissions: { is_admin: diff.is_admin, ...diff.permissions } }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Не удалось сохранить');
+        if (!res.ok) {
+          logDebug('Ошибка сохранения (ответ сервера)', { status: res.status, body: data });
+          throw new Error(data.error || 'Не удалось сохранить');
+        }
         const merged = {
           id: active.id,
           username: active.username,

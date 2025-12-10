@@ -340,28 +340,25 @@ switch ($resource) {
             }
 
             try {
+                $userExists = $pdo->prepare('SELECT COUNT(*) FROM users WHERE id = ?');
+                $userExists->execute([$userId]);
+                if ((int) $userExists->fetchColumn() === 0) {
+                    jsonResponse(['error' => 'Пользователь не найден'], 404);
+                }
+
+                ensurePermissionsRow($pdo, $userId);
+
                 error_log('[users:update_permissions] user_id=' . $userId . ' payload=' . json_encode($payloadPermissions, JSON_UNESCAPED_UNICODE));
+                $setParts = ['is_admin = ?'];
                 $values = [$isAdminFlag];
                 foreach (PERMISSION_KEYS as $key) {
+                    $setParts[] = 'can_' . $key . ' = ?';
                     $values[] = !empty($payloadPermissions[$key]) ? 1 : 0;
                 }
 
-                $existingStmt = $pdo->prepare('SELECT id FROM user_permissions WHERE user_id = ? LIMIT 1');
-                $existingStmt->execute([$userId]);
-                $existing = $existingStmt->fetchColumn();
-
-                if ($existing) {
-                    $setParts = array_map(fn($k) => 'can_' . $k . ' = ?', PERMISSION_KEYS);
-                    $sql = 'UPDATE user_permissions SET is_admin = ?, ' . implode(', ', $setParts) . ' WHERE user_id = ?';
-                    $stmt = $pdo->prepare($sql);
-                    $stmt->execute([...$values, $userId]);
-                } else {
-                    $columns = implode(', ', array_map(fn($k) => 'can_' . $k, PERMISSION_KEYS));
-                    $placeholders = implode(', ', array_fill(0, count(PERMISSION_KEYS) + 1, '?'));
-                    $sql = 'INSERT INTO user_permissions (user_id, is_admin, ' . $columns . ") VALUES (?, $placeholders)";
-                    $stmt = $pdo->prepare($sql);
-                    $stmt->execute([$userId, ...$values]);
-                }
+                $sql = 'UPDATE user_permissions SET ' . implode(', ', $setParts) . ' WHERE user_id = ?';
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([...$values, $userId]);
 
                 $storedRow = ensurePermissionsRow($pdo, $userId);
                 $storedPerms = permissionsRowToArray($storedRow);
