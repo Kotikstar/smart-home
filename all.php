@@ -190,18 +190,6 @@ if ($intent && isset($TARGET_URLS[$intent])) {
     </div>
   </section>
 
-  <section id="admin-panel" class="hidden rounded-3xl border border-amber-200/20 bg-amber-50/5 p-6 shadow-xl shadow-amber-500/10 space-y-4">
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <div>
-        <p class="text-xs uppercase tracking-[0.3em] text-amber-200/70">Администрирование</p>
-        <h2 class="text-xl font-semibold">Права пользователей</h2>
-        <p class="text-sm text-gray-200">Выдавайте доступ к разделам или отмечайте аккаунт как администратора.</p>
-      </div>
-      <span class="rounded-full border border-amber-200/40 bg-amber-400/15 px-3 py-1 text-xs font-semibold text-amber-100 shadow-lg shadow-amber-500/20">ADMIN</span>
-    </div>
-    <div id="users-table-body" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
-    <p id="admin-status" class="text-sm text-gray-300 min-h-[1.25rem]"></p>
-  </section>
 </main>
 
 <div id="login-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center opacity-0 pointer-events-none transition duration-300 z-50">
@@ -275,22 +263,6 @@ if ($intent && isset($TARGET_URLS[$intent])) {
     const closeBtn = document.getElementById('close-login');
     const modalCard = modal?.querySelector('.modal-enter');
     const params = new URLSearchParams(window.location.search);
-
-    const adminPanel = document.getElementById('admin-panel');
-    const usersTable = document.getElementById('users-table-body');
-    const adminStatus = document.getElementById('admin-status');
-
-    const PERMISSION_LABELS = {
-      dashboard: 'Панель',
-      fuel: 'Топливо',
-      cards: 'Карты',
-      dispense: 'Выдача',
-      logs: 'Логи',
-      diesel: 'Цены',
-      passes: 'Пропуска',
-      service: 'Сервис',
-      carbook: 'Car Book',
-    };
 
     const openModal = () => {
       if (!modal) return;
@@ -386,117 +358,6 @@ if ($intent && isset($TARGET_URLS[$intent])) {
     };
     protectedLinks.forEach((link) => link.addEventListener('click', guardNavigation));
 
-    const toggleAdminPanel = (visible) => {
-      if (!adminPanel) return;
-      adminPanel.classList.toggle('hidden', !visible);
-      if (!visible) {
-        if (usersTable) usersTable.innerHTML = '';
-        if (adminStatus) adminStatus.textContent = '';
-      }
-    };
-
-    const renderUsers = (users = []) => {
-      if (!usersTable) return;
-      usersTable.innerHTML = users.map((user) => {
-        const permCheckboxes = Object.entries(PERMISSION_LABELS).map(([key, label]) => {
-          const checked = user.permissions?.[key] ? 'checked' : '';
-          return `<label class="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-black/20 px-3 py-2"><input data-permission="${key}" type="checkbox" class="h-4 w-4 rounded border-white/30 bg-white/10" ${checked}><span class="text-xs">${label}</span></label>`;
-        }).join('');
-        const isAdminChecked = user.is_admin ? 'checked' : '';
-        return `
-          <div class="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-3 shadow-lg shadow-amber-500/10" data-user-id="${user.id}">
-            <div class="flex items-center justify-between gap-3">
-              <div>
-                <p class="font-semibold">${user.username}</p>
-                <p class="text-xs text-gray-400">ID ${user.id}</p>
-              </div>
-              <label class="inline-flex items-center gap-2 text-sm text-amber-100 font-semibold">
-                <input data-admin-toggle type="checkbox" class="h-4 w-4 rounded border-amber-200/70 bg-amber-200/20" ${isAdminChecked}>
-                <span>Админ</span>
-              </label>
-            </div>
-            <div class="flex flex-wrap gap-2 text-xs">${permCheckboxes}</div>
-            <button class="save-permissions rounded-xl bg-gradient-to-r from-amber-500/80 to-amber-400/80 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-amber-500/30" data-user-id="${user.id}">Сохранить</button>
-          </div>
-        `;
-      }).join('');
-    };
-
-    const loadUsers = async () => {
-      if (!isAdmin || !adminPanel) return;
-      if (adminStatus) adminStatus.textContent = 'Загружаем пользователей...';
-      try {
-        const res = await fetch('api.php?resource=users&action=list');
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Не удалось получить пользователей');
-        renderUsers(data);
-        if (adminStatus) adminStatus.textContent = 'Отметьте доступы и сохраните для выбранного пользователя.';
-      } catch (err) {
-        if (adminStatus) adminStatus.textContent = err.message || 'Ошибка загрузки пользователей';
-      }
-    };
-
-    usersTable?.addEventListener('click', async (e) => {
-      const btn = e.target.closest('.save-permissions');
-      if (!btn) return;
-      const card = btn.closest('[data-user-id]');
-      const userId = Number(btn.dataset.userId || card?.dataset.userId || 0);
-      if (!userId) return;
-      const payloadPerms = { is_admin: card?.querySelector('[data-admin-toggle]')?.checked || false };
-      Object.keys(PERMISSION_LABELS).forEach((key) => {
-        const input = card?.querySelector(`input[data-permission="${key}"]`);
-        payloadPerms[key] = input?.checked || false;
-      });
-      console.debug('[admin] Saving permissions', { userId, payloadPerms });
-      btn.setAttribute('disabled', 'disabled');
-      if (adminStatus) adminStatus.textContent = 'Сохраняем права...';
-      try {
-        const res = await fetch('api.php?resource=users&action=update_permissions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_id: userId, permissions: payloadPerms }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Не удалось сохранить права');
-        console.debug('[admin] Saved permissions response', data);
-        const savedPerms = data?.saved?.permissions || {};
-        const savedAdminFlag = !!data?.saved?.is_admin;
-        const savedAdminText = savedAdminFlag ? 'админ' : 'не админ';
-
-        const mismatches = [];
-        if ((payloadPerms.is_admin || false) !== savedAdminFlag) {
-          mismatches.push(`Админ: ${savedAdminText}`);
-        }
-        Object.keys(PERMISSION_LABELS).forEach((key) => {
-          if ((payloadPerms[key] || false) !== (savedPerms[key] || false)) {
-            mismatches.push(`${PERMISSION_LABELS[key]}: ${savedPerms[key] ? 'включено' : 'выключено'}`);
-          }
-        });
-
-        const statusMsg = mismatches.length
-          ? `Сохранено, но сервер вернул отличия → ${mismatches.join(', ')}`
-          : `Права обновлены (${savedAdminText}).`;
-        if (adminStatus) adminStatus.textContent = statusMsg;
-        if (userId === <?php echo currentUserId() ?: 0; ?>) {
-          await fetchSession();
-        }
-        await loadUsers();
-        const refreshedCard = usersTable?.querySelector(`[data-user-id="${userId}"]`);
-        if (refreshedCard) {
-          refreshedCard.classList.add('ring-2', 'ring-amber-300/60');
-          setTimeout(() => refreshedCard.classList.remove('ring-2', 'ring-amber-300/60'), 1200);
-        }
-        console.debug('[admin] Applied permissions snapshot', { userId, savedAdmin: savedAdminText, savedPerms, mismatches });
-        if (mismatches.length) {
-          console.warn('[admin] Saved permissions differ from requested payload', { mismatches, payloadPerms, savedPerms, savedAdmin: savedAdminText });
-        }
-      } catch (err) {
-        if (adminStatus) adminStatus.textContent = err.message || 'Ошибка сохранения прав';
-      } finally {
-        btn.removeAttribute('disabled');
-      }
-    });
-
     const updateAuthUI = (payload = {}) => {
       const authed = !!payload.authenticated;
       isAuthenticated = authed;
@@ -513,12 +374,10 @@ if ($intent && isset($TARGET_URLS[$intent])) {
         logoutBtn?.classList.remove('hidden');
         loginTrigger?.classList.add('hidden');
         if (payload.username) userPillName.textContent = payload.username;
-        toggleAdminPanel(isAdmin);
       } else {
         userPill?.classList.add('hidden');
         logoutBtn?.classList.add('hidden');
         loginTrigger?.classList.remove('hidden');
-        toggleAdminPanel(false);
       }
     };
 
@@ -529,9 +388,6 @@ if ($intent && isset($TARGET_URLS[$intent])) {
         const res = await fetch('webauthn.php?action=session');
         const data = await res.json();
         updateAuthUI(data);
-        if (isAdmin) {
-          loadUsers();
-        }
         return data;
       } catch (e) {
         console.error(e);
