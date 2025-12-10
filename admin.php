@@ -33,6 +33,37 @@ include 'header.php';
   <section class="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-xl shadow-amber-500/10 space-y-4">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div>
+        <h2 class="text-xl font-semibold">Админ-доступ к разделам</h2>
+        <p class="text-sm text-gray-200">Только администраторы видят и открывают критичные панели.</p>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-200">
+      <a href="fuel.php" class="rounded-2xl border border-white/10 bg-gradient-to-r from-amber-400/15 to-orange-500/10 px-5 py-4 shadow-lg shadow-amber-500/20 transition hover:border-amber-200/60">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <p class="text-xs uppercase tracking-wide text-amber-200/80">Топливо</p>
+            <p class="text-lg font-semibold text-white">Отчёты и контроль топлива</p>
+            <p class="text-xs text-gray-300">Доступно только здесь</p>
+          </div>
+          <span aria-hidden="true" class="text-2xl">⛽</span>
+        </div>
+      </a>
+      <a href="dispense.php" class="rounded-2xl border border-white/10 bg-gradient-to-r from-cyan-400/15 to-blue-500/10 px-5 py-4 shadow-lg shadow-cyan-500/20 transition hover:border-cyan-200/60">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <p class="text-xs uppercase tracking-wide text-cyan-200/80">Выдача</p>
+            <p class="text-lg font-semibold text-white">Управление выдачей топлива</p>
+            <p class="text-xs text-gray-300">Только для админов</p>
+          </div>
+          <span aria-hidden="true" class="text-2xl">🚚</span>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <section class="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-xl shadow-amber-500/10 space-y-4">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div>
         <h2 class="text-xl font-semibold">Управление правами</h2>
         <p class="text-sm text-gray-200">Выбирайте нужные разделы или назначайте пользователя администратором.</p>
       </div>
